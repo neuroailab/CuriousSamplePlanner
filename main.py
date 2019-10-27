@@ -45,7 +45,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "recycle": False, 
         "growth_factor": 10, 
         "detailed_gmp": False, 
-        "task": "BookShelf" 
+        "task": "ThreeBlocks" 
     }
 
     lt_dict = {

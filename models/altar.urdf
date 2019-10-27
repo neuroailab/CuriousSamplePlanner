@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<robot name="altar">
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 -0.05" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="2" length="0.1" />
+      </geometry>
+      <material name="desert sand">
+        <color rgba="0.9297 0.7930 0.6758 1" />
+      </material>
+    </visual>
+
+    <visual>
+      <origin xyz="0 0 0.14" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.3" length="0.28" />
+      </geometry>
+      <material name="desert sand">
+        <color rgba="0.9297 0.7930 0.6758 1" />
+      </material>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 -0.05" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="2" length="0.1" />
+      </geometry>
+    </collision>
+
+    <collision>
+      <origin xyz="0 0 0.14" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.3" length="0.28" />
+      </geometry>
+      <material name="desert sand">
+        <color rgba="0.9297 0.7930 0.6758 1" />
+      </material>
+    </collision>
+
+  </link>
+
+</robot>

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<robot name="globe">
+  <link name ="rb1_marker">
+    <visual>
+      <origin xyz='0 0 0'/>
+      <geometry>
+        <mesh filename="purple_triangle.obj"  scale="1 1 1" />
+      </geometry>
+			<material name="red">
+        <color rgba="1 0 1 1"/>
+  		</material>
+    </visual>
+    <collision>
+      <origin xyz='0 0 0'/>
+      <geometry>
+        <mesh filename="purple_triangle.obj"  scale="1 1 1" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

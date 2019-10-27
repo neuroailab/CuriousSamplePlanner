@@ -1,0 +1,5 @@
+solution_data/*
+trained_models
+__pycache__
+tasks/__pycache__
+trainers/__pycache__

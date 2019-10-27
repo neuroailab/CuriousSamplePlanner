@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="snake">
+    
+    <gazebo>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <robotNamespace>/snake</robotNamespace>
+        </plugin>
+    </gazebo>
+    <!-- MACROS -->
+    
+    <xacro:macro name="body_link" params="base_name parent_name colour">
+        
+        <link name="${base_name}_aux">
+            <inertial>
+                <origin xyz="0 0 0.025" rpy="0 0 0"/>
+                <mass value="0.1" />
+                <inertia ixx="0.00025" ixy="0.0" ixz="0.0" iyy="0.00025" iyz="0.0" izz="0.000125"/>
+            </inertial>
+            <collision>
+                <origin xyz="0 0 0.025" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.05" length="0.05"/>
+                </geometry>
+            </collision>
+            <visual>
+                <origin xyz="0 0 0.025" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.05" length="0.05"/>
+                </geometry>
+            </visual>
+    	</link>
+    	
+    	<gazebo reference="${base_name}_aux">
+            <kp>1000000000.0</kp>
+            <kd>1000000000.0</kd>
+            <mu1>10.0</mu1>
+            <mu2>10.0</mu2>
+            <material>Gazebo/Black</material>
+            <self_collide>1</self_collide>
+        </gazebo>
+    	
+    	
+        <link name="${base_name}">
+     	    <inertial>
+                <origin xyz="0 0 0.075" rpy="0 0 0"/>
+                <mass value="0.1" />
+                <inertia ixx="0.00025" ixy="0.0" ixz="0.0" iyy="0.00025" iyz="0.0" izz="0.000125"/>
+            </inertial>
+            <collision>
+                <origin xyz="0 0 0.075" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.05" length="0.15"/>
+                </geometry>
+            </collision>
+            <visual>
+                <origin xyz="0 0 0.075" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.05" length="0.15"/>
+                </geometry>
+            </visual>
+    	</link>
+    	
+    	<gazebo reference="${base_name}">
+            <kp>1000000000.0</kp>
+            <kd>1000000000.0</kd>
+            <mu1>10.0</mu1>
+            <mu2>10.0</mu2>
+            <material>Gazebo/${colour}</material>
+            <self_collide>1</self_collide>
+        </gazebo>
+        
+        <!-- We add to the Origin displacement a margin for flex due to self colisions for parent_name and base_name-->
+        <joint name="${base_name}_aux_joint" type="revolute">
+            <parent link="${parent_name}"/>
+        	<child link="${base_name}_aux"/>
+            <origin xyz="0 0 0.15" rpy="0 0 0"/>
+            <limit lower="-1.5708" upper="1.5708" effort="100.0" velocity="0.5"/>
+            <axis xyz="1 0 0"/>
+    	</joint>
+    	
+        <joint name="${base_name}_joint" type="revolute">
+    	    <parent link="${base_name}_aux"/>
+        	<child link="${base_name}"/>
+            <origin xyz="0 0 0.05" rpy="0 0 0"/>
+            <limit lower="-1.5708" upper="1.5708" effort="100.0" velocity="0.5"/>
+            <axis xyz="0 1 0"/>
+    	</joint>
+    	
+    	
+	    <transmission name="tran${base_name}_aux">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${base_name}_aux_joint">
+                <hardwareInterface>EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="motor${base_name}_aux">
+                <hardwareInterface>EffortJointInterface</hardwareInterface>
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+        </transmission>
+        
+        <transmission name="tran${base_name}">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${base_name}_joint">
+                <hardwareInterface>EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="motor${base_name}">
+                <hardwareInterface>EffortJointInterface</hardwareInterface>
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+        </transmission>
+    	
+    </xacro:macro>
+	<!-- * * * Link Definitions * * * -->
+	
+	
+
+    <link name="base_link">
+ 	    <inertial>
+            <origin xyz="0 0 0.075" rpy="0 0 0"/>
+            <mass value="0.1" />
+            <inertia ixx="0.00025" ixy="0.0" ixz="0.0" iyy="0.00025" iyz="0.0" izz="0.000125"/>
+        </inertial>
+        <collision>
+            <origin xyz="0 0 0.075" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.05" length="0.15"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0 0 0.075" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.05" length="0.15"/>
+            </geometry>
+        </visual>
+	</link>
+
+
+    <gazebo reference="base_link">
+        <kp>100000000000000.0</kp>
+        <kd>100000000000000.0</kd>
+        <mu1>10.0</mu1>
+        <mu2>10.0</mu2>
+        <material>Gazebo/Green</material>
+        <self_collide>1</self_collide>
+    </gazebo>
+
+    
+    <xacro:body_link base_name="snake_body_1" parent_name="base_link" colour="Blue"/>
+    <xacro:body_link base_name="snake_body_2" parent_name="snake_body_1" colour="Red"/>
+    <xacro:body_link base_name="snake_body_3" parent_name="snake_body_2" colour="Purple"/>
+    <xacro:body_link base_name="snake_body_4" parent_name="snake_body_3" colour="White"/>
+    <xacro:body_link base_name="snake_body_5" parent_name="snake_body_4" colour="Yellow"/>
+    <xacro:body_link base_name="snake_body_6" parent_name="snake_body_5" colour="Turquoise"/>
+    <xacro:body_link base_name="snake_body_7" parent_name="snake_body_6" colour="Grey"/>
+    
+
+</robot>

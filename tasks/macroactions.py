@@ -49,37 +49,34 @@ class MacroAction():
 
 	@property
 	def action_space_size(self):
-		return sum([macro.num_params for macro in self.macroaction_list])
+		return sum([macro.num_selectors+macro.num_params for macro in self.macroaction_list])
 
 	def reparameterize(self, block_to_move, pos):
 		r = reparameterize(pos[1].item(), 0.3, self.reachable_max)
 		height = reparameterize(pos[2].item(), 0.1, self.reachable_max)
 		theta = reparameterize(pos[0].item(), -math.pi, math.pi)
 		yaw = reparameterize(pos[3].item(), -math.pi, math.pi)
-
 		_, orig_quat = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
-		# Convert quat to euler
 		orig_euler = p.getEulerFromQuaternion(orig_quat)
 		teleport_pose = Pose(Point(x = r*math.cos(theta), y = r*math.sin(theta), z=min(height, 1)), Euler(roll=orig_euler[0], pitch=orig_euler[1], yaw=yaw))
 		return teleport_pose
 
 	def execute(self, embedding, config):
-
-		max_element = np.argmax(embedding[0:sum([self.macroaction_list[macro_idx].num_params for macro_idx in range(len(self.macroaction_list))])])
+		total_selectors = sum([self.macroaction_list[macro_idx].num_selectors for macro_idx in range(len(self.macroaction_list))])
+		max_element = np.argmax(embedding[0:total_selectors])
 		prev = 0
 		for ma_index, ma in enumerate(self.macroaction_list):
-			if(max_element >= prev and max_element < ma.num_params + prev ):
+			if(max_element >= prev and max_element < ma.num_selectors + prev ):
 				macroaction_index = ma_index
-			prev += ma.num_params
+			prev += ma.num_selectors
+
 
 		# Select out the nodes of the network responsible for that macroaction
-		mask_start = sum([self.macroaction_list[macro_idx].num_params for macro_idx in range(macroaction_index)])
-		mask_end = mask_start+self.macroaction_list[macroaction_index].num_params
-
 		if(isinstance(self.macroaction_list[macroaction_index], PickPlace)):
 			# Need to do some extra preprocessing to account for links
 			# If there is a link, we need to transport objects at the same time with the same dynamics to avoid explosion
-
+			mask_start = total_selectors+sum([self.macroaction_list[macro_idx].num_params for macro_idx in range(macroaction_index)])
+			mask_end = mask_start+self.macroaction_list[macroaction_index].num_params
 			# First, get the block to move
 			object_index = np.argmax(embedding[mask_start:mask_start+len(self.objects)], axis=0)
 			block_to_move = self.objects[int(object_index)]
@@ -113,6 +110,8 @@ class MacroAction():
 			return self.macroaction_list[macroaction_index].execute(block_to_move, teleport_pose)
 
 		elif(isinstance(self.macroaction_list[macroaction_index], AddLink)):
+			mask_start = sum([self.macroaction_list[macro_idx].num_selectors for macro_idx in range(macroaction_index)])
+			mask_end = mask_start+self.macroaction_list[macroaction_index].num_selectors
 			return self.macroaction_list[macroaction_index].execute(embedding[mask_start:mask_end], self.link_status)
 
 class PickPlace(MacroAction):
@@ -134,6 +133,10 @@ class PickPlace(MacroAction):
 	@property
 	def num_params(self):
 		return len(self.objects) + len(self.objects)*4
+
+	@property
+	def num_selectors(self):
+		return len(self.objects)
 
 
 	def feasibility_check(self, block_to_move, goal_pose):
@@ -306,7 +309,11 @@ class AddLink(MacroAction):
 		return len(self.objects)**2
 	@property
 	def num_params(self):
+		return 0 # Pairwise object groupings
+	@property
+	def num_selectors(self):
 		return len(self.objects)**2 # Pairwise object groupings
+
 
 	def execute(self, embedding, link_status):
 		object_pair_index = np.argmax(embedding, axis=0)

@@ -37,7 +37,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "batch_size": 128,
         "node_sampling": "uniform",
         "mode": "RecycleACPlanner",
-        "nsamples_per_update": 128,
+        "nsamples_per_update": 1024,
         "training": True, 
         "exp_id": exp_id,
         "load_id": load_id,
@@ -45,20 +45,22 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "recycle": False, 
         "growth_factor": 10, 
         "detailed_gmp": False, 
-        "task": "ThreeBlocks" 
+        "task": "FiveBlocks" 
     }
 
     lt_dict = {
         "StateEstimationPlanner": 0.003,
-        "RandomStateEmbeddingPlanner": 0.0003,
+        "RandomStateEmbeddingPlanner": 0.0001,
         "EffectPredictionPlanner": 0.001,
         "RandomSearchPlanner": 0,
-        "RecycleACPlanner": 0.0001
+        "RecycleACPlanner": 0.00001
     }
 
     experiment_dict["loss_threshold"] = lt_dict[experiment_dict["mode"]]
     experiment_dict['exp_path'] = "./solution_data/" + experiment_dict["exp_id"]
     experiment_dict['load_path'] = "./solution_data/" + experiment_dict["load_id"]
+    if (not os.path.isdir("./solution_data")):
+        os.mkdir("./solution_data")
     #experiment_dict['exp_path'] = "example_images/" + experiment_dict["exp_id"]
     #experiment_dict['load_path'] = 'example_images/' + experiment_dict["load_id"]
 
@@ -72,6 +74,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     if (load == None):
         if (os.path.isdir(experiment_dict['exp_path'])):
             shutil.rmtree(experiment_dict['exp_path'])
+
         os.mkdir(experiment_dict['exp_path'])
         
         graph, plan, experiment_dict = planner.plan()

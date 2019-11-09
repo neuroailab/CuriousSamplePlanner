@@ -44,7 +44,7 @@ class RecycleACPlanner(Planner):
         self.worldModel = opt_cuda(FocusedWorldModel(config_size=self.environment.config_size))
         self.value_loss_coef = 0.5
         self.entropy_coef = 0
-        self.lr = 7e-4
+        self.lr = 1e-3
         self.eps = 1e-5
         self.alpha = 0.99
         self.max_grad_norm = 0.5
@@ -64,9 +64,10 @@ class RecycleACPlanner(Planner):
 
     def expand_graph(self, run_index):
 
-        self.num_steps = 1 # No temporal aspect
+        self.num_steps = self.experiment_dict["nsamples_per_update"]
 
         rollouts = RolloutStorage(self.num_steps, 1, [self.environment.config_size], self.environment.action_space, 0)
+        rollouts.opt_cuda()
         for epoch in range(self.num_training_epochs):
             for next_loaded in enumerate(
                     DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
@@ -75,19 +76,22 @@ class RecycleACPlanner(Planner):
                 inputs, labels, prestates, acts, acts_log_probs, values, feasible, _, index = batch
                 self.optimizer_world.zero_grad()
                 outputs = self.worldModel(labels)
-                loss = torch.mean((outputs[:, self.environment.predict_mask] - labels[:, self.environment.predict_mask]) ** 2, dim=1).reshape(-1, 1)*feasible
+                loss = torch.mean((outputs[:, self.environment.predict_mask] - labels[:, self.environment.predict_mask]) ** 2, dim=1).reshape(-1, 1)
                 Lw = loss.mean()
                 Lw.backward()
                 self.optimizer_world.step()
                 loss = loss.detach()
-                done = [False]
-                infos = [{}]
-                recurrent_hidden_states = opt_cuda(torch.tensor([]))
-                masks = torch.FloatTensor([[0.0] if done_ else [1.0] for done_ in done])
-                bad_masks = torch.FloatTensor([[1.0] for info in infos])
-                for index in range(labels.shape[0]):
-                    rollouts.insert(labels[index, :], recurrent_hidden_states, torch.unsqueeze(acts[index, :], 0), torch.unsqueeze(acts_log_probs[index, :], 0), values[index, :], loss[index, :], masks, bad_masks)
+                if(self.experiment_dict["enable_asm"]):
+                    loss = loss*feasible-(1-feasible)
+                    done = [False]
+                    infos = [{}]
+                    recurrent_hidden_states = opt_cuda(torch.tensor([]))
+                    masks = torch.FloatTensor([[0.0] if done_ else [1.0] for done_ in done])
+                    bad_masks = torch.FloatTensor([[1.0] for info in infos])
+                    for index in range(labels.shape[0]):
+                        rollouts.insert(labels[index, :], recurrent_hidden_states, torch.unsqueeze(acts[index, :], 0), torch.unsqueeze(acts_log_probs[index, :], 0), values[index, :], loss[index, :], masks, bad_masks)
 
+        if(self.experiment_dict["enable_asm"]):
             with torch.no_grad():
                 next_value = self.environment.actor_critic.get_value(
                     rollouts.obs[-1], rollouts.recurrent_hidden_states[-1],
@@ -96,7 +100,6 @@ class RecycleACPlanner(Planner):
             rollouts.compute_returns(next_value, False, 0, 0, False)
             value_loss, action_loss, dist_entropy = self.agent.update(rollouts)
             rollouts.after_update()
-
 
         # Get the losses from all observations
         whole_losses = []

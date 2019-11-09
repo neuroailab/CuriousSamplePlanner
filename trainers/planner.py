@@ -111,6 +111,7 @@ class Planner():
             action_log_probs = opt_cuda(action_log_probs)
             values = opt_cuda(values)
             parent_nodes = opt_cuda(parents)
+            feasible = opt_cuda(feasible)
             combined_perspectives = opt_cuda(torch.cat(features))
 
             self.experience_replay.bufferadd(combined_perspectives, targets, pretargets, actions, action_log_probs, values, feasible, parent_nodes)

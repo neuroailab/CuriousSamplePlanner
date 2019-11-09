@@ -2,50 +2,31 @@
 from __future__ import print_function
 import pybullet as p
 import numpy as np
-import time
-import random
-import math
-import imageio
 import matplotlib.pyplot as plt
 import os
 import shutil
-import h5py
-import imageio
-from CuriousSamplePlanner.planning_pybullet.pybullet_tools.kuka_primitives import BodyPose, BodyConf, Command, get_grasp_gen, \
-	get_ik_fn, get_free_motion_gen, get_holding_motion_gen
+import sys
 from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
 	Pose, Point, Euler, set_default_camera, stable_z, \
 	BLOCK_URDF, load_model, wait_for_user, disconnect, DRAKE_IIWA_URDF, user_input, update_state, disable_real_time,inverse_kinematics,end_effector_from_body,approach_from_grasp, get_joints, get_joint_positions
-
-
 from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import get_pose, set_pose, get_movable_joints, \
 	set_joint_positions, add_fixed_constraint, enable_real_time, disable_real_time, joint_controller, \
 	enable_gravity, get_refine_fn, user_input, wait_for_duration, link_from_name, get_body_name, sample_placement, \
 	end_effector_from_body, approach_from_grasp, plan_joint_motion, GraspInfo, Pose, INF, Point, \
 	inverse_kinematics, pairwise_collision, remove_fixed_constraint, Attachment, get_sample_fn, \
 	step_simulation, refine_path, plan_direct_joint_motion, get_joint_positions, dump_world, get_link_pose,control_joints
-
 from CuriousSamplePlanner.planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach
-import pickle
-import torch
-from torch import nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
 import collections
-from motion_planners.discrete import astar
-import sys
 from gym import spaces
 from CuriousSamplePlanner.tasks.environment import Environment
 from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.tasks.macroactions import PickPlace, AddLink, MacroAction
 from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 
-
 class FiveBlocks(Environment):
 	def __init__(self, *args):
 		super(FiveBlocks, self).__init__(*args)  
 		connect(use_gui=False)
-		self.INFEASIBLE = -1
 		# self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
 		self.robot=None
 		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
@@ -68,7 +49,9 @@ class FiveBlocks(Environment):
 		self.break_on_timeout = True
 		self.macroaction = MacroAction([
 								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
+								AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 							])
+
 		self.action_space_size = self.macroaction.action_space_size
 		self.config_size = 5*6+len(self.macroaction.link_status) # (4 for links)
 		self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
@@ -78,8 +61,6 @@ class FiveBlocks(Environment):
 		p.setGravity(0, 0, -10, physicsClientId=0)
 		p.stepSimulation(physicsClientId=0)
 		self.get_start_state()
-
-
 
 	@property
 	def fixed(self):
@@ -91,52 +72,13 @@ class FiveBlocks(Environment):
 			set_pose(block, Pose(Point(x = conf[i], y = conf[i+1], z=conf[i+2]), Euler(roll = conf[i+3], pitch = conf[i+4], yaw=conf[i+5])))
 			i+=6
 
-
 	def check_goal_state(self, config):
 		# collect the y values
 		vals = [config[2], config[8], config[14], config[20], config[26]]
 		vals.sort()
 		if(vals[0]<0.06 and (vals[1] > 0.06 and vals[1] < 0.16) and (vals[2] > 0.16 and vals[2] < 0.26) and (vals[3] > 0.26 and vals[3] < 0.36) and (vals[4] > 0.36 and vals[4] < 0.46)):
 			return True
-
 		return False
-
-
-	# def get_available_block(self):
-	#     """
-	#         apply the preconditions for the macro-action. Must not select a block if there is a block on top of it
-	#     """
-	#     checks = 0
-	#     while(True):
-	#         block_c = random.choice([self.green_block, self.red_block, self.blue_block, self.purple_block, self.cyan_block])
-	#         cpos, _ = p.getBasePositionAndOrientation(block_c, physicsClientId=0)
-	#         notcs = [i for i in [self.green_block, self.red_block, self.blue_block, self.purple_block, self.cyan_block] if i not in [block_c]]
-	#         collisions = False
-	#         for notc in notcs:
-	#             contact = p.getClosestPoints(bodyA=block_c, bodyB=notc, distance=0, physicsClientId=0)
-	#             if(len(contact)>0):
-	#                 if(contact[0][5][2]>cpos[2]):
-	#                     collisions=True
-
-	#         if(not collisions):
-	#             return block_c
-
-				
-	#         checks+=1
-	#         if(checks == 20):
-	#             return None
-
-
-	# def take_action(self):
-	#     block_to_move = self.get_available_block()
-	#     if(block_to_move == None):
-	#         print("No blocks to move!")
-	#         return None
-	#     z = random.uniform(0.1, 0.7)
-	#     x, y, _= self.reachable_pos(z=z)
-	#     set_pose(block_to_move, Pose(Point(x = x, y = y, z=z)))
-	#     return np.concatenate([np.array([block_to_move]), self.get_current_config()])
-
 
 	def get_current_config(self):
 		tot = []
@@ -144,18 +86,15 @@ class FiveBlocks(Environment):
 			pos, quat = p.getBasePositionAndOrientation(block, physicsClientId=0)
 			euler = p.getEulerFromQuaternion(quat)
 			tot+=(pos+euler)
-
-
-		return np.array(tot)
+		return np.array(tot+self.macroaction.link_status)
 
 	def get_start_state(self):
 		collision = True
 		z = stable_z(self.green_block, self.floor)
 		while(collision):
 			pos1, pos2, pos3, pos4, pos5 = self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0) 
-			conf = np.array([pos1[0], pos1[1], z] + [0, 0, 0] + [pos2[0], pos2[1], z] + [0, 0, 0] + [pos3[0], pos3[1], z] + [0, 0, 0] + [pos4[0], pos4[1], z] + [0, 0, 0] + [pos5[0], pos5[1], z] + [0, 0, 0])
+			conf = np.array([pos1[0], pos1[1], z] + [0, 0, 0] + [pos2[0], pos2[1], z] + [0, 0, 0] + [pos3[0], pos3[1], z] + [0, 0, 0] + [pos4[0], pos4[1], z] + [0, 0, 0] + [pos5[0], pos5[1], z] + [0, 0, 0]+self.macroaction.link_status)
 			self.set_state(conf)
 			collision = check_pairwise_collisions([self.green_block, self.red_block, self.blue_block, self.purple_block, self.cyan_block])
-
 		return conf
 

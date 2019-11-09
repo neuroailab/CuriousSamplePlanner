@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
+from CuriousSamplePlanner.scripts.utils import *
 
 
 def _flatten_helper(T, N, _tensor):
@@ -27,19 +28,20 @@ class RolloutStorage(object):
         self.num_steps = num_steps
         self.step = 0
 
-    def to(self, device):
-        self.obs = self.obs.to(device)
-        self.recurrent_hidden_states = self.recurrent_hidden_states.to(device)
-        self.rewards = self.rewards.to(device)
-        self.value_preds = self.value_preds.to(device)
-        self.returns = self.returns.to(device)
-        self.action_log_probs = self.action_log_probs.to(device)
-        self.actions = self.actions.to(device)
-        self.masks = self.masks.to(device)
-        self.bad_masks = self.bad_masks.to(device)
+    def opt_cuda(self):
+        self.obs = opt_cuda(self.obs)
+        self.recurrent_hidden_states = opt_cuda(self.recurrent_hidden_states)
+        self.rewards = opt_cuda(self.rewards)
+        self.value_preds = opt_cuda(self.value_preds)
+        self.returns = opt_cuda(self.returns)
+        self.action_log_probs = opt_cuda(self.action_log_probs)
+        self.actions = opt_cuda(self.actions)
+        self.masks = opt_cuda(self.masks)
+        self.bad_masks = opt_cuda(self.bad_masks)
 
     def insert(self, obs, recurrent_hidden_states, actions, action_log_probs,
                value_preds, rewards, masks, bad_masks):
+
         self.obs[self.step + 1].copy_(obs)
         self.recurrent_hidden_states[self.step +
                                      1].copy_(recurrent_hidden_states)

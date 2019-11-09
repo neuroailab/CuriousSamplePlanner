@@ -141,7 +141,9 @@ class BookShelf(Environment):
 		# Reduce configuration redundancy/complexity
 		b1e = p.getEulerFromQuaternion(b1quat)
 		b2e = p.getEulerFromQuaternion(b2quat)
+		
 		booke = p.getEulerFromQuaternion(bookquat)
+
 		# print("getting config: "+str(int(self.current_constraint_id is not None)))
 
 		return np.array(list(b1pos+b1e+b2pos+b2e+bookpos+booke)+self.macroaction.link_status)

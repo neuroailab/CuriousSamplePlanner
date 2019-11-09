@@ -76,6 +76,7 @@ class ThreeBlocks(Environment):
 		self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
 
  
+ 
 		# Select out positional degrees of freedom
 		self.predict_mask = [0,1,2]+[6,7,8]+[12,13,14]
 		p.setGravity(0, 0, -10, physicsClientId=0)

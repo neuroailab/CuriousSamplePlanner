@@ -16,8 +16,6 @@ from CuriousSamplePlanner.planning_pybullet.pybullet_tools.kuka_primitives impor
 from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
 	Pose, Point, Euler, set_default_camera, stable_z, \
 	BLOCK_URDF, load_model, wait_for_user, disconnect, DRAKE_IIWA_URDF, user_input, update_state, disable_real_time,inverse_kinematics,end_effector_from_body,approach_from_grasp, get_joints, get_joint_positions
-
-
 from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import multiply, invert, get_pose, set_pose, get_movable_joints, \
 	set_joint_positions, add_fixed_constraint_2, enable_real_time, disable_real_time, joint_controller, \
 	enable_gravity, get_refine_fn, user_input, wait_for_duration, link_from_name, get_body_name, sample_placement, \

@@ -49,7 +49,7 @@ class MacroAction():
 
 	@property
 	def action_space_size(self):
-		return len(self.macroaction_list)+sum([macro.num_params for macro in self.macroaction_list])
+		return sum([macro.num_params for macro in self.macroaction_list])
 
 	def reparameterize(self, block_to_move, pos):
 		r = reparameterize(pos[1].item(), 0.3, self.reachable_max)
@@ -64,10 +64,17 @@ class MacroAction():
 		return teleport_pose
 
 	def execute(self, embedding, config):
-		macroaction_index = np.argmax(embedding[0:len(self.macroaction_list)])
+
+		max_element = np.argmax(embedding[0:sum([self.macroaction_list[macro_idx].num_params for macro_idx in range(len(self.macroaction_list))])])
+		prev = 0
+		for ma_index, ma in enumerate(self.macroaction_list):
+			if(max_element >= prev and max_element < ma.num_params + prev ):
+				macroaction_index = ma_index
+			prev += ma.num_params
+
 		# Select out the nodes of the network responsible for that macroaction
-		mask_start = len(self.macroaction_list)+sum([self.macroaction_list[macro_idx].num_params for macro_idx in range(macroaction_index)])
-		mask_end = len(self.macroaction_list)+mask_start+self.macroaction_list[macroaction_index].num_params
+		mask_start = sum([self.macroaction_list[macro_idx].num_params for macro_idx in range(macroaction_index)])
+		mask_end = mask_start+self.macroaction_list[macroaction_index].num_params
 
 		if(isinstance(self.macroaction_list[macroaction_index], PickPlace)):
 			# Need to do some extra preprocessing to account for links
@@ -84,7 +91,6 @@ class MacroAction():
 				if(block_index != block_to_move and self.link_status[int(object_index)*num_blocks+block_index]):
 					connected_blocks.append(self.objects[block_index])
 
-			
 			# Then we need to get the goal pose of the moving object
 			start_index = len(self.objects)+sum([self.macroaction_list[macroaction_index].object_params[i] for i in range(object_index)])
 			end_index = start_index+self.macroaction_list[macroaction_index].object_params[object_index]
@@ -106,7 +112,7 @@ class MacroAction():
 
 			return self.macroaction_list[macroaction_index].execute(block_to_move, teleport_pose)
 
-		else:
+		elif(isinstance(self.macroaction_list[macroaction_index], AddLink)):
 			return self.macroaction_list[macroaction_index].execute(embedding[mask_start:mask_end], self.link_status)
 
 class PickPlace(MacroAction):

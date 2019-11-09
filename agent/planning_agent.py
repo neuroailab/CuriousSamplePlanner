@@ -101,8 +101,6 @@ class PlanningAgent():
         #     p.removeConstraint(objobjlink)
 
         # self.links = []
-
-
         # self.environment.set_state(plan[0].config)
         # for command in commands:
         #     self.execute(command)

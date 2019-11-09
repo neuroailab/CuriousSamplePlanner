@@ -44,13 +44,14 @@ from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 class ThreeBlocks(Environment):
 	def __init__(self, *args):
 		super(ThreeBlocks, self).__init__(*args)
-		connect(use_gui=False)
+		connect(use_gui=True)
 		self.INFEASIBLE = -1
 
 		if(self.detailed_gmp):
 			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
 		else:
 			self.robot = None
+
 
 		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
 		set_default_camera()
@@ -61,14 +62,15 @@ class ThreeBlocks(Environment):
 		#self.perspectives = [(45, -10)]
 
 		self.objects = [self.green_block, self.red_block, self.blue_block]
-
 		# Set up the state space and action space for this task
 		self.break_on_timeout = True
 		self.macroaction = MacroAction([
 								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
+								AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 							])
 		self.action_space_size = self.macroaction.action_space_size
 		self.config_size = 3*6+len(self.macroaction.link_status) # (4 for links)
+		print(self.config_size)
 		self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
 
 		self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
@@ -109,14 +111,14 @@ class ThreeBlocks(Environment):
 		geuler = p.getEulerFromQuaternion(gquat)
 		reuler = p.getEulerFromQuaternion(rquat)
 		yeuler = p.getEulerFromQuaternion(yquat)
-		return np.concatenate([gpos, geuler, rpos, reuler, ypos, yeuler])
+		return np.concatenate([gpos, geuler, rpos, reuler, ypos, yeuler]+[self.macroaction.link_status])
 
 	def get_start_state(self):
 		collision = True
 		z = stable_z(self.green_block, self.floor)
 		while(collision):
 			pos1, pos2, pos3 = self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0)
-			conf = np.array([pos1[0], pos1[1], z, 0, 0, 0, pos2[0], pos2[1], z, 0, 0, 0, pos3[0], pos3[1], z, 0, 0, 0])
+			conf = np.array([pos1[0], pos1[1], z, 0, 0, 0, pos2[0], pos2[1], z, 0, 0, 0, pos3[0], pos3[1], z, 0, 0, 0]+self.macroaction.link_status)
 			self.set_state(conf)
 			collision = check_pairwise_collisions([self.green_block, self.red_block, self.green_block])
 		return conf

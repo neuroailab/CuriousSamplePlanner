@@ -52,7 +52,6 @@ class Environment():
 
         self.arm_size=1
 
-
     def take_action(self, action):
 
         with torch.no_grad():
@@ -68,7 +67,6 @@ class Environment():
         config = self.get_current_config()
 
         return (action, action_log_prob, value, int(self.macroaction.execute(action, config) is not None))
-
 
     @property
     def fixed(self):

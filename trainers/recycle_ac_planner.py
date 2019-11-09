@@ -80,8 +80,6 @@ class RecycleACPlanner(Planner):
                 Lw.backward()
                 self.optimizer_world.step()
                 loss = loss.detach()
-
-                # Not traditional RL because gamma=0, no done or info masking
                 done = [False]
                 infos = [{}]
                 recurrent_hidden_states = opt_cuda(torch.tensor([]))
@@ -103,15 +101,17 @@ class RecycleACPlanner(Planner):
         # Get the losses from all observations
         whole_losses = []
         whole_indices = []
+        whole_feasibles = []
         for _, batch in enumerate(
                 DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
-            inputs, labels, prestates, acts, _, _, _, _, index = batch
+            inputs, labels, prestates, acts, _, _, feasible, _, index = batch
             outputs = self.worldModel(labels)
             losses = []
             for i in range(self.batch_size):
                 losses.append(torch.unsqueeze(
                     self.criterion(outputs[i, self.environment.predict_mask], labels[i, self.environment.predict_mask]),
                     dim=0))
+                whole_feasibles.append(feasible[i].item())
 
             whole_losses += [l.item() for l in losses]
             whole_indices += [l.item() for l in index]
@@ -119,6 +119,7 @@ class RecycleACPlanner(Planner):
         sort_args = np.array(whole_losses).argsort()[::-1]
         high_loss_indices = [whole_indices[p] for p in sort_args]
 
+        print("Feasible: "+str(sum(feasible)/len(feasible)))
         average_loss = sum(whole_losses) / len(whole_losses)
         self.experiment_dict['world_model_losses'].append(average_loss)
         self.print_exp_dict(verbose=False)
@@ -126,7 +127,7 @@ class RecycleACPlanner(Planner):
         if (average_loss <= self.loss_threshold):
             added_base_count = 0
             for en_index, hl_index in enumerate(high_loss_indices):
-                input, target, pretarget, action, _, _, parent_index, _ = self.experience_replay.__getitem__(hl_index)
+                input, target, pretarget, action, _, _, _, parent_index, _ = self.experience_replay.__getitem__(hl_index)
                 print(target)
                 ntarget = target.cpu().numpy()
                 npretarget = pretarget.cpu().numpy()

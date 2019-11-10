@@ -297,7 +297,7 @@ def get_bottom_grasps(body, under=False, tool_pose=TOOL_POSE, body_pose=unit_pos
                                 reflect_z, translate_center, body_pose)]
     return grasps
 
-def get_side_grasps(body, under=False, tool_pose=TOOL_POSE, body_pose=unit_pose(),
+def get_side_grasps(body, under=0, tool_pose=TOOL_POSE, body_pose=unit_pose(),
                     max_width=MAX_GRASP_WIDTH, grasp_length=GRASP_LENGTH, top_offset=SIDE_HEIGHT_OFFSET):
     # TODO: compute bounding box width wrt tool frame
     center, (w, l, h) = approximate_as_prism(body, body_pose=body_pose)
@@ -305,20 +305,46 @@ def get_side_grasps(body, under=False, tool_pose=TOOL_POSE, body_pose=unit_pose(
     grasps = []
     #x_offset = 0
     x_offset = h/2 - top_offset
-    for j in range(1 + under):
-        swap_xz = Pose(euler=[0, -math.pi / 2 + j * math.pi, 0])
-        if w <= max_width:
-            translate_z = Pose(point=[x_offset, 0, l / 2 - grasp_length])
-            for i in range(2):
-                rotate_z = Pose(euler=[math.pi / 2 + i * math.pi, 0, 0])
-                grasps += [multiply(tool_pose, translate_z, rotate_z, swap_xz,
-                                    translate_center, body_pose)]  # , np.array([w])
-        if l <= max_width:
-            translate_z = Pose(point=[x_offset, 0, w / 2 - grasp_length])
-            for i in range(2):
-                rotate_z = Pose(euler=[i * math.pi, 0, 0])
-                grasps += [multiply(tool_pose, translate_z, rotate_z, swap_xz,
-                                    translate_center, body_pose)]  # , np.array([l])
+
+    swap_xz = Pose(euler=[0, -math.pi / 2 + under * math.pi, 0])
+    if w <= max_width:
+        translate_z = Pose(point=[x_offset, 0, l / 2 - grasp_length])
+        for i in range(2):
+            rotate_z = Pose(euler=[math.pi / 2 + under * math.pi, 0, 0])
+            grasps += [multiply(tool_pose, translate_z, rotate_z, swap_xz,
+                                translate_center, body_pose)]  # , np.array([w])
+    if l <= max_width:
+        translate_z = Pose(point=[x_offset, 0, w / 2 - grasp_length])
+        for i in range(2):
+            rotate_z = Pose(euler=[under * math.pi, 0, 0])
+            grasps += [multiply(tool_pose, translate_z, rotate_z, swap_xz,
+                                translate_center, body_pose)]  # , np.array([l])
+    return grasps
+
+def get_other_side_grasps(body, under=0, tool_pose=TOOL_POSE, body_pose=unit_pose(),
+                    max_width=MAX_GRASP_WIDTH, grasp_length=GRASP_LENGTH, top_offset=SIDE_HEIGHT_OFFSET):
+    # TODO: compute bounding box width wrt tool frame
+    center, (w, l, h) = approximate_as_prism(body, body_pose=body_pose)
+    translate_center = Pose(point=point_from_pose(body_pose)-center)
+    grasps = []
+    #x_offset = 0
+    x_offset = h/2 - top_offset
+
+    swap_xz = Pose(euler=[0, 0, -math.pi / 2 + under * math.pi])
+    if w <= max_width:
+        print("t1")
+        translate_z = Pose(point=[x_offset, 0, l / 2 - grasp_length])
+        for i in range(2):
+            rotate_z = Pose(euler=[math.pi / 2 + under * math.pi, 0, 0])
+            grasps += [multiply(tool_pose, translate_z, rotate_z, swap_xz,
+                                translate_center, body_pose)]  # , np.array([w])
+    if l <= max_width:
+        print("t2")
+        translate_z = Pose(point=[x_offset, 0, w / 2 - grasp_length])
+        for i in range(2):
+            rotate_z = Pose(euler=[under * math.pi, 0, 0])
+            grasps += [multiply(tool_pose, translate_z, rotate_z, swap_xz,
+                                translate_center, body_pose)]  # , np.array([l])
     return grasps
 
 #####################################

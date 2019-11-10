@@ -66,7 +66,7 @@ class ThreeBlocks(Environment):
 		self.break_on_timeout = True
 		self.macroaction = MacroAction([
 								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
-								AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
+								# AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 							])
 		self.action_space_size = self.macroaction.action_space_size
 		self.config_size = 3*6+len(self.macroaction.link_status) # (4 for links)

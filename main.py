@@ -30,7 +30,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "num_sampled_nodes": 0,
         "num_graph_nodes": 0,
         "num_training_epochs": 30, 
-        "learning_rate": 5e-5,
+        "learning_rate": 1e-4,
         "sample_cap": 1e7, 
         "batch_size": 128,
         "node_sampling": "uniform",
@@ -44,15 +44,15 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "recycle": False, 
         "growth_factor": 10, 
         "detailed_gmp": False, 
-        "task": "BookShelf" 
+        "task": "ThreeBlocks" 
     }
 
     lt_dict = {
         "StateEstimationPlanner": 0.003,
-        "RandomStateEmbeddingPlanner": 0.0003,
+        "RandomStateEmbeddingPlanner": 0.0001,
         "EffectPredictionPlanner": 0.001,
         "RandomSearchPlanner": 0,
-        "RecycleACPlanner": 0.0003
+        "RecycleACPlanner": 0.0001
     }
 
     experiment_dict["loss_threshold"] = lt_dict[experiment_dict["mode"]]
@@ -67,8 +67,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     planner = PC(experiment_dict)
 
 
-    load = None
-    # load = "found_path.pkl"
+    load = "found_path.pkl"
 
     if (load == None):
         if (os.path.isdir(experiment_dict['exp_path'])):

@@ -68,26 +68,21 @@ class PlanningAgent():
 
     def multistep_plan(self, plan):
 
-
-        self.environment.set_state(plan[0].config)
+        current_config = plan[0].config
+        self.environment.set_state(current_config)
         start_world = WorldSaver()
+        commands = []
 
-
-        for i in range(1, len(action)):
-
-            saved_world = WorldSaver()
-            macroaction_index = self.environment.get_macroaction_index(action[i])
-            mask_start = len(self.environment.macroactions) + sum([self.environment.macroactions[macro_idx].num_params for macro_idx in range(macroaction_index)])
-            mask_end = mask_start + self.environment.macroactions[macroaction_index].num_params
-            macroaction = self.environment.macroactions[macroaction_index]
-            macroaction.robot = self.robot
+        for i in range(1, len(plan)):
+            print(plan[i].action)
+            macroaction = self.environment.macroaction
+            macroaction.add_arm(self.robot)
             macroaction.gmp = True
             macroaction.teleport = False
-            aux, command = macroaction.execute(embedding = action[i][mask_start:mask_end])
-
+            command, aux = macroaction.execute(config = self.environment.get_current_config(), embedding = plan[i].action, sim=True)
+            print(command)
             if(aux != None):
                 self.links.append(aux)
-            saved_world.restore()
             # Restore the state
             if(command is not None):
                 self.execute(command)

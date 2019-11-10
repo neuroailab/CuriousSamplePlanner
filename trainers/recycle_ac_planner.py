@@ -133,6 +133,7 @@ class RecycleACPlanner(Planner):
             for en_index, hl_index in enumerate(high_loss_indices):
                 input, target, pretarget, action, _, _, _, parent_index, _ = self.experience_replay.__getitem__(hl_index)
                 print(target)
+                time.sleep(1)
                 ntarget = target.cpu().numpy()
                 npretarget = pretarget.cpu().numpy()
                 if (not self.graph.is_node(ntarget)):

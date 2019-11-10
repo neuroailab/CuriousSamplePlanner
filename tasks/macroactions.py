@@ -174,48 +174,48 @@ class PickPlace(MacroAction):
 
 		saved_world = WorldSaver()
 		# Approach from different angles
-		for grasp_gen in [get_grasp_gen(self.robot, direction) for direction in ['top', 'bottom', 'side_one',  'side_two', 'side_three','side_four']]: # Can put in other angles here, leaving as top for now
-			ik_fn = get_ik_fn(self.robot, fixed=self.fixed, teleport=self.teleport) # These are functions which generate sequences of actions
-			free_motion_fn = get_free_motion_gen(self.robot, fixed=([block_to_move] + self.fixed), teleport=self.teleport)
-			holding_motion_fn = get_holding_motion_gen(self.robot, fixed=self.fixed, teleport=self.teleport)
-			block1_pose0 = BodyPose(block_to_move)
-			conf0 = BodyConf(self.robot)
-			grasp, = next(grasp_gen(block_to_move))
-			grasp2 = grasp
-			saved_world.restore()
-			result1 = ik_fn(block_to_move, block1_pose0, grasp)
-			if result1 is None:
-				continue
-			conf1, path2 = result1
-			gripper_pose = end_effector_from_body(goal_pose, grasp2.grasp_pose)
-			grasp2.approach_pose = Pose(0.1*Point(z=1))
-			approach_pose = approach_from_grasp(grasp2.approach_pose, gripper_pose)
-			movable_joints = get_movable_joints(self.robot)
-			starting_joint_positions = get_joint_positions(self.robot, movable_joints)
+		ik_fn = get_ik_fn(self.robot, fixed=self.fixed, teleport=self.teleport) # These are functions which generate sequences of actions
+		free_motion_fn = get_free_motion_gen(self.robot, fixed=([block_to_move] + self.fixed), teleport=self.teleport)
+		holding_motion_fn = get_holding_motion_gen(self.robot, fixed=self.fixed, teleport=self.teleport)
+		block1_pose0 = BodyPose(block_to_move)
+		conf0 = BodyConf(self.robot)
+		for grasp_gen in [get_grasp_gen(self.robot, direction) for direction in ['top', 'side']]: # Can put in other angles here, leaving as top for now
+			for (grasp,) in grasp_gen(block_to_move):
+				grasp2 = grasp
+				saved_world.restore()
+				result1 = ik_fn(block_to_move, block1_pose0, grasp)
+				if result1 is None:
+					continue
+				conf1, path2 = result1
+				gripper_pose = end_effector_from_body(goal_pose, grasp2.grasp_pose)
+				grasp2.approach_pose = Pose(0.1*Point(z=1))
+				approach_pose = approach_from_grasp(grasp2.approach_pose, gripper_pose)
+				movable_joints = get_movable_joints(self.robot)
+				starting_joint_positions = get_joint_positions(self.robot, movable_joints)
 
-			for i in range(5): # Infeasible if it cannot reach in 5 tries
-				sample_fn = get_sample_fn(self.robot, movable_joints)
-				set_joint_positions(self.robot, movable_joints, sample_fn())
-				q_approach = inverse_kinematics(self.robot, grasp2.link, approach_pose)
-				if(q_approach is not None):
-					break
+				for i in range(5): # Infeasible if it cannot reach in 5 tries
+					sample_fn = get_sample_fn(self.robot, movable_joints)
+					set_joint_positions(self.robot, movable_joints, sample_fn())
+					q_approach = inverse_kinematics(self.robot, grasp2.link, approach_pose)
+					if(q_approach is not None):
+						break
 
-			block2_conf = BodyConf(self.robot, q_approach)
-			block1_pose0.assign()
-			saved_world.restore()
-			result2 = free_motion_fn(conf0, conf1)
-			if result2 is None:
-				continue
-			path1, = result2
-			result3 = holding_motion_fn(conf1, block2_conf, block_to_move, grasp)
-			if result3 is None:
-				continue
-			path3, = result3
-			path4 = Command([Detach(block_to_move, self.robot, grasp2.link)])
-			return (Command(path1.body_paths +
-							  path2.body_paths +
-							  path3.body_paths +
-							  path4.body_paths), True)
+				block2_conf = BodyConf(self.robot, q_approach)
+				block1_pose0.assign()
+				saved_world.restore()
+				result2 = free_motion_fn(conf0, conf1)
+				if result2 is None:
+					continue
+				path1, = result2
+				result3 = holding_motion_fn(conf1, block2_conf, block_to_move, grasp)
+				if result3 is None:
+					continue
+				path3, = result3
+				path4 = Command([Detach(block_to_move, self.robot, grasp2.link)])
+				return (Command(path1.body_paths +
+								  path2.body_paths +
+								  path3.body_paths +
+								  path4.body_paths), True)
 
 		print("FAIL")
 		return (None, False)

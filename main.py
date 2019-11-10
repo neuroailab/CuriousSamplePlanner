@@ -30,7 +30,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "num_sampled_nodes": 0,
         "num_graph_nodes": 0,
         "num_training_epochs": 20, 
-        "learning_rate": 1e-3,
+        "learning_rate": 5e-5,
         "sample_cap": 1e7, 
         "batch_size": 128,
         "node_sampling": "uniform",

@@ -1,7 +1,7 @@
 numpy
 imageio
 matplotlib
-pybullet
+pybullet==2.5.3
 recordclass
 torch
 scipy

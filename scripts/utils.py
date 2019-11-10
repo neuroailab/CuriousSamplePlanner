@@ -77,4 +77,4 @@ def take_picture(yaw, pitch, roll, size=84):
 														 lightDirection=[1, 1, 1],
 														 renderer=p.ER_TINY_RENDERER)
 
-	return img_arr[2][:, :, :3]
+	return np.array(img_arr[2])[:, :, :3]

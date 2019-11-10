@@ -29,15 +29,13 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "world_model_losses": [],
         "num_sampled_nodes": 0,
         "num_graph_nodes": 0,
-        "num_training_epochs": 30, 
-        "learning_rate": 5e-5,
-        "actor_learning_rate": 3e-5,
-        "critic_learning_rate": 4e-5,
+        "num_training_epochs": 20, 
+        "learning_rate": 1e-3,
         "sample_cap": 1e7, 
         "batch_size": 128,
         "node_sampling": "uniform",
         "mode": "RecycleACPlanner",
-        "nsamples_per_update": 1024,
+        "nsamples_per_update": 512,
         "training": True, 
         "exp_id": exp_id,
         "load_id": load_id,
@@ -53,7 +51,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "RandomStateEmbeddingPlanner": 0.0001,
         "EffectPredictionPlanner": 0.001,
         "RandomSearchPlanner": 0,
-        "RecycleACPlanner": 0.00001
+        "RecycleACPlanner": 0.0001
     }
 
     experiment_dict["loss_threshold"] = lt_dict[experiment_dict["mode"]]

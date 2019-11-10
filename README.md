@@ -28,12 +28,6 @@ Number of epochs to train the world model until updating the graph
 ### learning_rate
 Learning rate of the world model
 
-### actor_learning_rate
-Learning rate of the actor in actor-critic
-
-### critic_learning_rate
-Learning rate of the critic in actor-critic
-
 ### sample_cap
 Maximum number of samples before terminating.
 

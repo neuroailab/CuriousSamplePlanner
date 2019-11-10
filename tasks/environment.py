@@ -53,20 +53,23 @@ class Environment():
         self.arm_size=1
 
     def take_action(self, action):
-
-        with torch.no_grad():
-            obs =  opt_cuda(torch.tensor(self.get_current_config()).type(torch.FloatTensor))
-            value, policy_action, action_log_prob, recurrent_hidden_states = self.actor_critic.act(torch.unsqueeze(obs,0), opt_cuda(torch.tensor([])), 1)
-            m = torch.nn.Tanh()
-            policy_action = m(policy_action)
-        # Curious Action Selection or Uniform Action Selection
         if(self.asm_enabled):
-            action = policy_action
-        # Get the macroaction that is being executed
-        action = action[0].detach().cpu().numpy()
-        config = self.get_current_config()
+            with torch.no_grad():
+                obs =  opt_cuda(torch.tensor(self.get_current_config()).type(torch.FloatTensor))
+                value, policy_action, action_log_prob, recurrent_hidden_states = self.actor_critic.act(torch.unsqueeze(obs,0), opt_cuda(torch.tensor([])), 1)
+                m = torch.nn.Tanh()
+                policy_action = m(policy_action)
+            # Curious Action Selection or Uniform Action Selection
 
-        return (action, action_log_prob, value, int(self.macroaction.execute(action, config) is not None))
+                action = policy_action
+            return (action, action_log_prob, value, int(self.macroaction.execute(action, config) is not None))
+        else:
+            # Get the macroaction that is being executed
+            action = action[0].detach().cpu().numpy()
+            config = self.get_current_config()
+            return (action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), int(self.macroaction.execute(action, config) is not None))
+
+
 
     @property
     def fixed(self):
@@ -129,8 +132,7 @@ class Environment():
         return [0, random.uniform(-math.pi, math.pi), random.uniform(-math.pi, math.pi)]
 
     def is_stable(self, old_conf, conf, count):
-
-        return (dist(old_conf, conf)<5e-5, count>500)
+        return (dist(old_conf, conf)<5e-4, count>500)
 
     def collect_samples(self, graph):
         features = []

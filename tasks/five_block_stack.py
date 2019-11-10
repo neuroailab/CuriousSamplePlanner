@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import shutil
+import time
 import sys
 from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
 	Pose, Point, Euler, set_default_camera, stable_z, \
@@ -46,10 +47,10 @@ class FiveBlocks(Environment):
 		self.objects = [self.green_block, self.red_block, self.blue_block, self.purple_block, self.cyan_block]
 
 		# In this environment, if it times out, we know an object fell off the screen
-		self.break_on_timeout = True
+		self.break_on_timeout = False
 		self.macroaction = MacroAction([
 								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
-								AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
+								# AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 							])
 
 		self.action_space_size = self.macroaction.action_space_size
@@ -71,6 +72,10 @@ class FiveBlocks(Environment):
 		for block in self.objects:
 			set_pose(block, Pose(Point(x = conf[i], y = conf[i+1], z=conf[i+2]), Euler(roll = conf[i+3], pitch = conf[i+4], yaw=conf[i+5])))
 			i+=6
+
+		if(len(self.macroaction.link_status)>0):
+			self.macroaction.link_status = list(conf[-len(self.macroaction.link_status):len(conf)])
+
 
 	def check_goal_state(self, config):
 		# collect the y values

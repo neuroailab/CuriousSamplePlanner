@@ -63,7 +63,7 @@ class PlanGraph(Dataset):
     def save(self, save_path):
         np.save(save_path, np.array(self.plan_graph))
 
-    def expand_node(self, nselect):
+    def expand_node(self, nselect, priority=0.0001):
         if(self.selection_strategy == "uniform"):
             return choice(np.array(list(self.plan_graph.keys())), nselect)
         elif(self.selection_strategy == "softmax"):
@@ -71,7 +71,6 @@ class PlanGraph(Dataset):
             if(np.std(vals) == 0):
                 sm = softmax(vals) 
             else:
-                priority = 1
                 sm = softmax(priority*(vals-np.mean(vals))/np.std(vals))
             return choice(np.array(list(self.plan_graph.keys())), nselect, p=sm)
 

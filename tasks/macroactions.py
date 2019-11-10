@@ -86,6 +86,7 @@ class MacroAction():
 			num_blocks = int(math.sqrt(len(self.link_status)))
 			for block_index in range(num_blocks):
 				if(block_index != block_to_move and self.link_status[int(object_index)*num_blocks+block_index]):
+					print("LINKING: "+str(self.link_status[int(object_index)*num_blocks+block_index]))
 					connected_blocks.append(self.objects[block_index])
 
 			# Then we need to get the goal pose of the moving object
@@ -149,13 +150,21 @@ class PickPlace(MacroAction):
 		if(math.sqrt((pos[0]**2+pos[1]**2)) > self.reachable_max+0.15):
 			return None
 
-
+		# Quick bookend collision checking
 		notcs = [i for i in self.objects if i not in [block_to_move]]
+		saved_world = WorldSaver()
 		for notc in notcs:
 			contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
 			if(len(contact)>0):
 				if(contact[0][5][2]>pos[2]):
 					return None
+		set_pose(block_to_move, goal_pose)
+		for notc in notcs:
+			contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
+			if(len(contact)>0):
+				# if(contact[0][5][2]>pos[2]):
+				return None
+		saved_world.restore()
 
 		if(not self.gmp):
 			return True
@@ -239,8 +248,6 @@ class AddLink(MacroAction):
 
 		self.links = [None for i in range(len(objects)**2)]
 		super(AddLink, self).__init__(*args)
-
-
 
 	
 	def feasibility_check(self, block1, block2):

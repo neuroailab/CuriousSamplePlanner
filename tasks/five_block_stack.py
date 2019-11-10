@@ -57,11 +57,10 @@ class FiveBlocks(Environment):
 		self.config_size = 5*6+len(self.macroaction.link_status) # (4 for links)
 		self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
 		self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
-
 		self.predict_mask = [0,1,2]+[6,7,8]+[12,13,14]+[18,19,20]+[24,25,26]
-		p.setGravity(0, 0, -10, physicsClientId=0)
+
+		p.setGravity(0, 0, -10)
 		p.stepSimulation(physicsClientId=0)
-		self.get_start_state()
 
 	@property
 	def fixed(self):

@@ -57,6 +57,7 @@ class BallRamp(Environment):
 		self.break_on_timeout = True
 		self.macroaction = MacroAction([
 								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
+								# AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp)
 							])
 		self.action_space_size = self.macroaction.action_space_size
 		self.config_size = 4*6+len(self.macroaction.link_status) 
@@ -64,13 +65,8 @@ class BallRamp(Environment):
 		self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
 		self.predict_mask = [0,1,2]+[6,7,8]+[12,13,14]+[18,19,20]
 
-
 		p.setGravity(0, 0, -10)
 		p.stepSimulation(physicsClientId=0)
-
-
-	def get_macroaction_index(self, action):
-		return np.argmax(action[0:len(self.macroactions)])
 
 	@property
 	def fixed(self):
@@ -79,7 +75,6 @@ class BallRamp(Environment):
 	def check_goal_state(self, config):
 		# collect the y values
 		ball_distance = abs(math.sqrt(config[0]**2+config[1]**2))
-		# if(((config[8]<0.06 and  config[14] > 0.14) or (config[14]<0.06 and  config[8] > 0.14)) and ball_distance>=0.9):
 		if(ball_distance>=1):
 			return True
 		return False

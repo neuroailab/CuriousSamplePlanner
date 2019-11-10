@@ -82,7 +82,8 @@ class RecycleACPlanner(Planner):
                 self.optimizer_world.step()
                 loss = loss.detach()
                 if(self.experiment_dict["enable_asm"]):
-                    loss = loss*feasible-(1-feasible)
+                    if(self.experiment_dict["feasible_training"]):
+                        loss = loss*feasible-(1-feasible)
                     done = [False]
                     infos = [{}]
                     recurrent_hidden_states = opt_cuda(torch.tensor([]))
@@ -122,7 +123,7 @@ class RecycleACPlanner(Planner):
         sort_args = np.array(whole_losses).argsort()[::-1]
         high_loss_indices = [whole_indices[p] for p in sort_args]
 
-        print("Feasible: "+str(sum(feasible)/len(feasible)))
+        # print("Feasible: "+str(sum(feasible)/len(feasible)))
         average_loss = sum(whole_losses) / len(whole_losses)
         self.experiment_dict['world_model_losses'].append(average_loss)
         self.print_exp_dict(verbose=False)

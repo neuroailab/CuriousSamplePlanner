@@ -52,7 +52,7 @@ class MacroAction():
 		return sum([macro.num_selectors+macro.num_params for macro in self.macroaction_list])
 
 	def reparameterize(self, block_to_move, pos):
-		r = reparameterize(pos[1].item(), 0.3, self.reachable_max)
+		r = reparameterize(pos[1].item(), 0.3, 0.7)
 		height = reparameterize(pos[2].item(), 0.1, self.reachable_max)
 		theta = reparameterize(pos[0].item(), -math.pi, math.pi)
 		yaw = reparameterize(pos[3].item(), -math.pi, math.pi)
@@ -86,7 +86,6 @@ class MacroAction():
 			num_blocks = int(math.sqrt(len(self.link_status)))
 			for block_index in range(num_blocks):
 				if(block_index != block_to_move and self.link_status[int(object_index)*num_blocks+block_index]):
-					print("LINKING: "+str(self.link_status[int(object_index)*num_blocks+block_index]))
 					connected_blocks.append(self.objects[block_index])
 
 			# Then we need to get the goal pose of the moving object

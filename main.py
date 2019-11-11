@@ -12,12 +12,11 @@ from CuriousSamplePlanner.planning_pybullet.motion.motion_planners.discrete impo
 import sys
 
 # Planners
-from CuriousSamplePlanner.trainers.random_embedding_planner import RandomEmbeddingPlanner
 from CuriousSamplePlanner.trainers.state_estimation_planner import StateEstimationPlanner
 from CuriousSamplePlanner.trainers.random_search_planner import RandomSearchPlanner
 from CuriousSamplePlanner.trainers.effect_prediction_planner import EffectPredictionPlanner
 from CuriousSamplePlanner.trainers.random_state_embedding_planner import RandomStateEmbeddingPlanner
-from CuriousSamplePlanner.trainers.recycle_ac_planner import  RecycleACPlanner
+from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
 from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.agent.planning_agent import PlanningAgent
 
@@ -26,16 +25,15 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
 
     # Set up the hyperparameters
     experiment_dict = {
-        "world_model_losses": [],
-        "num_sampled_nodes": 0,
-        "num_graph_nodes": 0,
-        "num_training_epochs": 20, 
+        # Hyps
+        "num_training_epochs": 30, 
         "learning_rate": 5e-5,
         "sample_cap": 1e7, 
         "batch_size": 128,
         "node_sampling": "uniform",
-        "mode": "RecycleACPlanner",
-        "nsamples_per_update": 512,
+        "mode": "RandomStateEmbeddingPlanner",
+        "feasible_training": True,
+        "nsamples_per_update": 1024,
         "training": True, 
         "exp_id": exp_id,
         "load_id": load_id,
@@ -43,15 +41,19 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "recycle": False, 
         "growth_factor": 10, 
         "detailed_gmp": False, 
-        "task": "FiveBlocks" 
+        "task": "FiveBlocks",
+        # Stats
+        "world_model_losses": [],
+        "feasibility":[],
+        "num_sampled_nodes": 0,
+        "num_graph_nodes": 0,
     }
 
     lt_dict = {
         "StateEstimationPlanner": 0.003,
-        "RandomStateEmbeddingPlanner": 0.0001,
+        "RandomStateEmbeddingPlanner": 0.00005,
         "EffectPredictionPlanner": 0.001,
-        "RandomSearchPlanner": 0,
-        "RecycleACPlanner": 0.0001
+        "RandomSearchPlanner": 0
     }
 
     experiment_dict["loss_threshold"] = lt_dict[experiment_dict["mode"]]
@@ -66,9 +68,9 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     planner = PC(experiment_dict)
 
 
-    load = None
     # load = "found_path.pkl"
-
+    load = None
+    
     if (load == None):
         if (os.path.isdir(experiment_dict['exp_path'])):
             shutil.rmtree(experiment_dict['exp_path'])

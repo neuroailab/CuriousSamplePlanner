@@ -1,7 +1,7 @@
 import time
 # dump_body(robot)
 
-from .pr2_utils import get_top_grasps, get_side_grasps, get_bottom_grasps
+from .pr2_utils import get_top_grasps, get_side_grasps
 from .utils import get_pose, set_pose, get_movable_joints, \
     set_joint_positions, add_fixed_constraint, enable_real_time, disable_real_time, joint_controller, \
     enable_gravity, get_refine_fn, user_input, wait_for_duration, link_from_name, get_body_name, sample_placement, \
@@ -12,11 +12,9 @@ from .utils import get_pose, set_pose, get_movable_joints, \
 import pybullet as p
 GRASP_INFO = {
     'top': GraspInfo(lambda body: get_top_grasps(body, under=True, tool_pose=Pose(), max_width=INF,  grasp_length=0),
-                     approach_pose=Pose(0.01*Point(z=0.5))),
+                     approach_pose=Pose(0.1*Point(z=1))),
     'side': GraspInfo(lambda body: get_side_grasps(body, under=True, tool_pose=Pose(), max_width=INF,  grasp_length=0),
-                     approach_pose=Pose(0.01*Point(z=0.5))),
-    'bottom': GraspInfo(lambda body: get_bottom_grasps(body, under=True, tool_pose=Pose(), max_width=INF,  grasp_length=0),
-                     approach_pose=Pose(0.01*Point(z=0.5))),
+                     approach_pose=Pose(0.1*Point(z=1))),
 }
 
 TOOL_FRAMES = {

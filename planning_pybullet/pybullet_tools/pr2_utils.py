@@ -252,38 +252,10 @@ SIDE_HEIGHT_OFFSET = 0.03 # z distance from top of object
 def get_top_grasps(body, under=False, tool_pose=TOOL_POSE, body_pose=unit_pose(),
                    max_width=MAX_GRASP_WIDTH, grasp_length=GRASP_LENGTH):
     # TODO: rename the box grasps
-    try:
-        center, (w, l, h) = approximate_as_prism(body, body_pose=body_pose)
-    except:
-        center, (w, l, h) = list(body_pose[0]), (0.2, 0.2, 0.2)
-        body_pose
+    center, (w, l, h) = approximate_as_prism(body, body_pose=body_pose)
     reflect_z = Pose(euler=[0, math.pi, 0])
     translate_z = Pose(point=[0, 0, h / 2 - grasp_length])
-    translate_center = Pose(point=point_from_pose(body_pose))
-    grasps = []
-    if w <= max_width:
-        for i in range(1 + under):
-            rotate_z = Pose(euler=[0, 0, math.pi / 2 + i * math.pi])
-            grasps += [multiply(tool_pose, translate_z, rotate_z,
-                                reflect_z, translate_center, body_pose)]
-    if l <= max_width:
-        for i in range(1 + under):
-            rotate_z = Pose(euler=[0, 0, i * math.pi])
-            grasps += [multiply(tool_pose, translate_z, rotate_z,
-                                reflect_z, translate_center, body_pose)]
-    return grasps
-
-def get_bottom_grasps(body, under=False, tool_pose=TOOL_POSE, body_pose=unit_pose(),
-                   max_width=MAX_GRASP_WIDTH, grasp_length=GRASP_LENGTH):
-    # TODO: rename the box grasps
-    try:
-        center, (w, l, h) = approximate_as_prism(body, body_pose=body_pose)
-    except:
-        center, (w, l, h) = list(body_pose[0]), (0.2, 0.2, 0.2)
-        body_pose
-    reflect_z = Pose(euler=[0, 0, 0])
-    translate_z = Pose(point=[0, 0, h / 2 - grasp_length])
-    translate_center = Pose(point=point_from_pose(body_pose))
+    translate_center = Pose(point=point_from_pose(body_pose)-center)
     grasps = []
     if w <= max_width:
         for i in range(1 + under):
@@ -319,8 +291,8 @@ def get_side_grasps(body, under=False, tool_pose=TOOL_POSE, body_pose=unit_pose(
                 rotate_z = Pose(euler=[i * math.pi, 0, 0])
                 grasps += [multiply(tool_pose, translate_z, rotate_z, swap_xz,
                                     translate_center, body_pose)]  # , np.array([l])
-    return grasps
 
+    return grasps
 #####################################
 
 # Cylinder grasps

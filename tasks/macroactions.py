@@ -47,12 +47,16 @@ class MacroAction():
 			self.link_status += [0 for _ in range(macroaction.num_links)]
 			self.objects = macroaction.objects
 
+	def add_arm(self, arm):
+		self.robot = arm
+		for m in self.macroaction_list:
+			m.robot = arm
 	@property
 	def action_space_size(self):
 		return sum([macro.num_selectors+macro.num_params for macro in self.macroaction_list])
 
 	def reparameterize(self, block_to_move, pos):
-		r = reparameterize(pos[1].item(), 0.3, self.reachable_max)
+		r = reparameterize(pos[1].item(), 0.4, 0.7)
 		height = reparameterize(pos[2].item(), 0.1, self.reachable_max)
 		theta = reparameterize(pos[0].item(), -math.pi, math.pi)
 		yaw = reparameterize(pos[3].item(), -math.pi, math.pi)
@@ -61,7 +65,7 @@ class MacroAction():
 		teleport_pose = Pose(Point(x = r*math.cos(theta), y = r*math.sin(theta), z=min(height, 1)), Euler(roll=orig_euler[0], pitch=orig_euler[1], yaw=yaw))
 		return teleport_pose
 
-	def execute(self, embedding, config):
+	def execute(self, embedding, config, sim=False):
 		total_selectors = sum([self.macroaction_list[macro_idx].num_selectors for macro_idx in range(len(self.macroaction_list))])
 		max_element = np.argmax(embedding[0:total_selectors])
 		prev = 0
@@ -86,7 +90,6 @@ class MacroAction():
 			num_blocks = int(math.sqrt(len(self.link_status)))
 			for block_index in range(num_blocks):
 				if(block_index != block_to_move and self.link_status[int(object_index)*num_blocks+block_index]):
-					print("LINKING: "+str(self.link_status[int(object_index)*num_blocks+block_index]))
 					connected_blocks.append(self.objects[block_index])
 
 			# Then we need to get the goal pose of the moving object
@@ -108,12 +111,12 @@ class MacroAction():
 				other_goal_pose = multiply(teleport_pose, multiply(invert(start_pose), other_pose))
 				set_pose(connected_block, other_goal_pose)
 
-			return self.macroaction_list[macroaction_index].execute(block_to_move, teleport_pose)
+			return self.macroaction_list[macroaction_index].execute(block_to_move, teleport_pose, sim)
 
 		elif(isinstance(self.macroaction_list[macroaction_index], AddLink)):
 			mask_start = sum([self.macroaction_list[macro_idx].num_selectors for macro_idx in range(macroaction_index)])
 			mask_end = mask_start+self.macroaction_list[macroaction_index].num_selectors
-			return self.macroaction_list[macroaction_index].execute(embedding[mask_start:mask_end], self.link_status)
+			return self.macroaction_list[macroaction_index].execute(embedding[mask_start:mask_end], self.link_status, sim)
 
 class PickPlace(MacroAction):
 	def __init__(self, objects=[], robot=None, fixed = [], gmp=False, *args):
@@ -140,91 +143,94 @@ class PickPlace(MacroAction):
 		return len(self.objects)
 
 
-	def feasibility_check(self, block_to_move, goal_pose):
+	def feasibility_check(self, block_to_move, goal_pose, sim=False):
 		"""
-			This function plans a path for the object to reach the goal position
+			Output: (planning steps, feasible)
 		"""
 
 		# Rough feasibility check
 		pos, _ = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
 		if(math.sqrt((pos[0]**2+pos[1]**2)) > self.reachable_max+0.15):
-			return None
+			return (None, False)
 
 		# Quick bookend collision checking
 		notcs = [i for i in self.objects if i not in [block_to_move]]
 		saved_world = WorldSaver()
 		for notc in notcs:
 			contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
-			if(len(contact)>0):
+			if(len(contact) > 0):
 				if(contact[0][5][2]>pos[2]):
-					return None
+					return (None, False)
+
 		set_pose(block_to_move, goal_pose)
 		for notc in notcs:
 			contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
 			if(len(contact)>0):
 				# if(contact[0][5][2]>pos[2]):
-				return None
+				return (None, False)
 		saved_world.restore()
 
-		if(not self.gmp):
-			return True
+		if(not self.gmp and not sim):
+			return (None, True)
 
 		saved_world = WorldSaver()
 		# Approach from different angles
-		for grasp_gen in [get_grasp_gen(self.robot, direction) for direction in ['top']]: # Can put in other angles here, leaving as top for now
-			ik_fn = get_ik_fn(self.robot, fixed=self.fixed, teleport=self.teleport) # These are functions which generate sequences of actions
-			free_motion_fn = get_free_motion_gen(self.robot, fixed=([block_to_move] + self.fixed), teleport=self.teleport)
-			holding_motion_fn = get_holding_motion_gen(self.robot, fixed=self.fixed, teleport=self.teleport)
-			block1_pose0 = BodyPose(block_to_move)
-			conf0 = BodyConf(self.robot)
-			grasp, = next(grasp_gen(block_to_move))
-			grasp2 = grasp
-			saved_world.restore()
-			result1 = ik_fn(block_to_move, block1_pose0, grasp)
-			if result1 is None:
-				continue
-			conf1, path2 = result1
-			gripper_pose = end_effector_from_body(goal_pose, grasp2.grasp_pose)
-			grasp2.approach_pose = Pose(0.1*Point(z=1))
-			approach_pose = approach_from_grasp(grasp2.approach_pose, gripper_pose)
-			movable_joints = get_movable_joints(self.robot)
-			starting_joint_positions = get_joint_positions(self.robot, movable_joints)
+		ik_fn = get_ik_fn(self.robot, fixed=self.fixed, teleport=self.teleport) # These are functions which generate sequences of actions
+		free_motion_fn = get_free_motion_gen(self.robot, fixed=([block_to_move] + self.fixed), teleport=self.teleport)
+		holding_motion_fn = get_holding_motion_gen(self.robot, fixed=self.fixed, teleport=self.teleport)
+		block1_pose0 = BodyPose(block_to_move)
+		conf0 = BodyConf(self.robot)
+		for grasp_gen in [get_grasp_gen(self.robot, direction) for direction in ['top', 'side']]: # Can put in other angles here, leaving as top for now
+			for (grasp,) in grasp_gen(block_to_move):
+				grasp2 = grasp
+				saved_world.restore()
+				result1 = ik_fn(block_to_move, block1_pose0, grasp)
+				if result1 is None:
+					continue
+				conf1, path2 = result1
+				gripper_pose = end_effector_from_body(goal_pose, grasp2.grasp_pose)
+				grasp2.approach_pose = Pose(0.1*Point(z=1))
+				approach_pose = approach_from_grasp(grasp2.approach_pose, gripper_pose)
+				movable_joints = get_movable_joints(self.robot)
+				starting_joint_positions = get_joint_positions(self.robot, movable_joints)
 
-			for i in range(5): # Infeasible if it cannot reach in 5 tries
-				sample_fn = get_sample_fn(self.robot, movable_joints)
-				set_joint_positions(self.robot, movable_joints, sample_fn())
-				q_approach = inverse_kinematics(self.robot, grasp2.link, approach_pose)
-				if(q_approach is not None):
-					break
+				for i in range(5): # Infeasible if it cannot reach in 5 tries
+					sample_fn = get_sample_fn(self.robot, movable_joints)
+					set_joint_positions(self.robot, movable_joints, sample_fn())
+					q_approach = inverse_kinematics(self.robot, grasp2.link, approach_pose)
+					if(q_approach is not None):
+						break
 
-			block2_conf = BodyConf(self.robot, q_approach)
-			block1_pose0.assign()
-			saved_world.restore()
-			result2 = free_motion_fn(conf0, conf1)
-			if result2 is None:
-				continue
-			path1, = result2
-			result3 = holding_motion_fn(conf1, block2_conf, block_to_move, grasp)
-			if result3 is None:
-				continue
-			path3, = result3
-			path4 = Command([Detach(block_to_move, self.robot, grasp2.link)])
+				block2_conf = BodyConf(self.robot, q_approach)
+				block1_pose0.assign()
+				saved_world.restore()
+				result2 = free_motion_fn(conf0, conf1)
+				if result2 is None:
+					continue
+				path1, = result2
+				result3 = holding_motion_fn(conf1, block2_conf, block_to_move, grasp)
+				if result3 is None:
+					continue
+				path3, = result3
+				path4 = Command([Detach(block_to_move, self.robot, grasp2.link)])
+				return (Command(path1.body_paths +
+								  path2.body_paths +
+								  path3.body_paths +
+								  path4.body_paths), True)
 
-			return (None, Command(path1.body_paths +
-							  path2.body_paths +
-							  path3.body_paths +
-							  path4.body_paths))
-		return None, None
+		return (None, False)
 
-	def execute(self, block_to_move, teleport_pose):
-
+	def execute(self, block_to_move, teleport_pose, sim=False):
+		"""
+			Output: (planning commands, auxiliary output)
+		"""
 		# Get the selected position
-		feas_command = self.feasibility_check(block_to_move, teleport_pose)
-		if(feas_command is not None):
+		(feas_command, feasible) = self.feasibility_check(block_to_move, teleport_pose, sim)
+		if(feasible == True):
 			set_pose(block_to_move, teleport_pose)
-			return feas_command
+			return (feas_command, None)
 		else:
-			return None
+			return (None, None)
 
 class Link(ApplyForce):
 	def __init__(self, link_point1):
@@ -250,16 +256,18 @@ class AddLink(MacroAction):
 		super(AddLink, self).__init__(*args)
 
 	
-	def feasibility_check(self, block1, block2):
-
+	def feasibility_check(self, block1, block2, sim=False):
+		"""
+			Output: (planning steps, feasible)
+		"""
 		if(block1 != block2 and check_state_collision(block1, block2)):
 			"""
 				This function plans a path for the object to reach the goal position
 			"""
 
 			# Rough feasibility check
-			if(self.gmp is False):
-				return True
+			if(not self.gmp and not sim):
+				return (None, True)
 
 			close_points = p.getClosestPoints(bodyA=block1, bodyB=block2, distance=0.01, physicsClientId=0)
 			link_point1 = close_points[0][5]
@@ -285,7 +293,7 @@ class AddLink(MacroAction):
 			saved_world.restore()
 			result1 = ik_fn(guide_cube, block1_pose0, grasp)
 			if result1 is None:
-				return None
+				return (None, False)
 
 			conf1, path2 = result1
 			goal_pose = block1_pose0.pose
@@ -304,12 +312,12 @@ class AddLink(MacroAction):
 			block2_conf = BodyConf(self.robot, q_approach)
 			result2 = free_motion_fn(conf0, conf1)
 			if result2 is None:
-				return None
+				return (None, False)
 			path1, = result2
 			return ([link_object, block1, local_link_transform, objobjlink], Command(path1.body_paths+[link_object]))
 		
 		else:
-			return None
+			return (None, False)
 
 	@property
 	def num_links(self):
@@ -322,7 +330,10 @@ class AddLink(MacroAction):
 		return len(self.objects)**2 # Pairwise object groupings
 
 
-	def execute(self, embedding, link_status):
+	def execute(self, embedding, link_status, sim=False):
+		"""
+			Output: (planning commands, auxiliary output)
+		"""
 		object_pair_index = np.argmax(embedding, axis=0)
 		object1_index = int(float(object_pair_index)/len(self.objects))
 		object2_index = int(float(object_pair_index)%len(self.objects))
@@ -337,13 +348,13 @@ class AddLink(MacroAction):
 
 		else:
 			# Not already linked
-			feas_command = self.feasibility_check(self.objects[object1_index], self.objects[object2_index])
-			if(feas_command is not None):
+			(feas_command, feasible) = self.feasibility_check(self.objects[object1_index], self.objects[object2_index], sim)
+			if(feasible == True):
 				# Matrix should by symmetric
 				link_status[object1_index*len(self.objects)+object2_index] = 1
 				link_status[object2_index*len(self.objects)+object1_index] = 1
 				return (feas_command, link_status)
 			else:
-				return None
+				return (None, None)
 
 

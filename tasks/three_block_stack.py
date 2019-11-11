@@ -44,7 +44,7 @@ from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 class ThreeBlocks(Environment):
 	def __init__(self, *args):
 		super(ThreeBlocks, self).__init__(*args)
-		connect(use_gui=True)
+		connect(use_gui=False)
 		self.INFEASIBLE = -1
 
 		if(self.detailed_gmp):
@@ -66,7 +66,7 @@ class ThreeBlocks(Environment):
 		self.break_on_timeout = True
 		self.macroaction = MacroAction([
 								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
-								AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
+								# AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 							])
 		self.action_space_size = self.macroaction.action_space_size
 		self.config_size = 3*6+len(self.macroaction.link_status) # (4 for links)
@@ -99,6 +99,12 @@ class ThreeBlocks(Environment):
 		# collect the y values
 		vals = [config[2], config[8], config[14]]
 		vals.sort()
+
+		# Two stack
+		# if( (vals[0] > 0.06) or (vals[1] > 0.06) or (vals[2] > 0.06)):
+		# 	return True
+
+		# Three stack
 		if(vals[0]<0.06 and (vals[1] < 0.16 and vals[1] > 0.06) and (vals[2] > 0.16)):
 			return True
 		return False

@@ -42,7 +42,7 @@ from gym import spaces
 class BookShelf(Environment):
 	def __init__(self, *args):
 		super(BookShelf, self).__init__(*args)
-		connect(use_gui=True)
+		connect(use_gui=False)
 
 		self.arm_size = 1
 		# self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
@@ -98,6 +98,7 @@ class BookShelf(Environment):
 	def set_state(self, conf):
 		if(self.current_constraint_id is not None):
 			p.removeConstraint(self.current_constraint_id)
+			self.current_constraint_id = None
 
 
 		set_pose(self.blue_rod_1, Pose(Point(x = conf[0], y = conf[1], z=conf[2]), 

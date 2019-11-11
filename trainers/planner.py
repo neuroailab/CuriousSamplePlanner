@@ -87,7 +87,9 @@ class Planner():
 		run_index=0
 
 		while (True):
-			features, states, prestates, actions, action_log_probs, values, feasible, parents, goal, goal_prestate, goal_parent, goal_action = self.environment.collect_samples(self.graph)
+			features, states, prestates, actions, action_log_probs, \
+			values, feasible, parents, goal, goal_prestate, goal_parent, \
+			goal_action, goal_command, commands = self.environment.collect_samples(self.graph)
 			if(goal is not None):
 				self.environment.set_state(goal)
 				for perspective in self.environment.perspectives:
@@ -99,7 +101,7 @@ class Planner():
 									take_picture(perspective[0], perspective[1], 0, size=512))
 
 				
-				goal_node = self.graph.add_node(goal, goal_prestate, goal_action, goal_parent)
+				goal_node = self.graph.add_node(goal, goal_prestate, goal_action, goal_parent, command=goal_command)
 				plan = self.graph.get_optimal_plan(start_node, goal_node)
 				break
 
@@ -112,7 +114,8 @@ class Planner():
 			feasible = opt_cuda(feasible)
 			combined_perspectives = opt_cuda(torch.cat(features))
 
-			self.experience_replay.bufferadd(combined_perspectives, targets, pretargets, actions, action_log_probs, values, feasible, parent_nodes)
+			self.experience_replay.bufferadd(combined_perspectives, targets, pretargets,\
+				actions, action_log_probs, values, feasible, parent_nodes, commands)
 			self.expand_graph(run_index)
 			self.experiment_dict["num_sampled_nodes"] += self.experiment_dict["nsamples_per_update"]
 			if(self.experiment_dict["num_sampled_nodes"]>self.sample_cap):

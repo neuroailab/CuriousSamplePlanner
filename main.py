@@ -23,25 +23,28 @@ from CuriousSamplePlanner.agent.planning_agent import PlanningAgent
 
 def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
 
+
+    # load = "found_path.pkl"
+    load = None
+
     # Set up the hyperparameters
     experiment_dict = {
         # Hyps
-        "num_training_epochs": 30, 
-        "learning_rate": 5e-5,
+        "task": "PulleySeesaw",
+        "learning_rate": 5e-5,  
         "sample_cap": 1e7, 
         "batch_size": 128,
         "node_sampling": "uniform",
-        "mode": "StateEstimationPlanner",
+        "mode": "RandomStateEmbeddingPlanner",
         "feasible_training": True,
         "nsamples_per_update": 1024,
         "training": True, 
         "exp_id": exp_id,
         "load_id": load_id,
         "enable_asm": False, 
-        "recycle": False, 
-        "growth_factor": 10, 
+        "growth_factor": 10,
         "detailed_gmp": False, 
-        "task": "FiveBlocks",
+        "num_training_epochs": 30, 
         # Stats
         "world_model_losses": [],
         "feasibility":[],
@@ -51,10 +54,11 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
 
     lt_dict = {
         "StateEstimationPlanner": 0.003,
-        "RandomStateEmbeddingPlanner": 0.00005,
+        "RandomStateEmbeddingPlanner": 0.0003,
         "EffectPredictionPlanner": 0.001,
         "RandomSearchPlanner": 0
     }
+
 
     experiment_dict["loss_threshold"] = lt_dict[experiment_dict["mode"]]
     experiment_dict['exp_path'] = "./solution_data/" + experiment_dict["exp_id"]
@@ -66,10 +70,6 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
 
     PC = getattr(sys.modules[__name__], experiment_dict['mode'])
     planner = PC(experiment_dict)
-
-
-    # load = "found_path.pkl"
-    load = None
     
     if (load == None):
         if (os.path.isdir(experiment_dict['exp_path'])):
@@ -91,6 +91,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         pickle.dump(experiment_dict, stats_filehandler)
 
     else:
+        # Find the plan and execute it
         filehandler = open(experiment_dict['exp_path'] + '/' + load, 'rb')
         plan = pickle.load(filehandler)
 

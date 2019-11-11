@@ -41,7 +41,7 @@ def main():
 		'lr': 7e-4,
 		'eps': 1e-5,
 		'alpha': 0.99,
-		'gamma': 0.5,
+		'gamma': 0,
 		'use_gae': False,
 		'entropy_coef': 0,
 		'value_loss_coef': 0.5,

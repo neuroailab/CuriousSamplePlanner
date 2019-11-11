@@ -27,9 +27,11 @@ from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 class FiveBlocks(Environment):
 	def __init__(self, *args):
 		super(FiveBlocks, self).__init__(*args)  
-		connect(use_gui=False)
-		# self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
-		self.robot=None
+		connect(use_gui=True)
+		if(self.detailed_gmp):
+			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
+		else:
+			self.robot = None
 		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
 		self.ARM_LEN = 0.8
 		set_default_camera()

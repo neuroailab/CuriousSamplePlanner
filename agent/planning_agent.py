@@ -64,7 +64,10 @@ class PlanningAgent():
     def __init__(self, environment):
         self.environment = environment
         self.links = []
-        self.add_arm(self.environment.arm_size)
+        if(self.environment.robot != None):
+            self.robot = self.environment.robot
+        else:
+            self.add_arm(self.environment.arm_size)
 
     def multistep_plan(self, plan):
 
@@ -72,22 +75,23 @@ class PlanningAgent():
         self.environment.set_state(current_config)
         start_world = WorldSaver()
         commands = []
-
         for i in range(1, len(plan)):
-            print(plan[i].action)
-            macroaction = self.environment.macroaction
-            macroaction.add_arm(self.robot)
-            macroaction.gmp = True
-            macroaction.teleport = False
-            command, aux = macroaction.execute(config = self.environment.get_current_config(), embedding = plan[i].action, sim=True)
-            print(command)
-            if(aux != None):
-                self.links.append(aux)
-            # Restore the state
-            if(command is not None):
-                self.execute(command)
-                self.environment.run_until_stable(hook = self.hook, dt=0.01)
-            commands.append(command)
+            if(plan[i].command != None):
+                commands.append(plan[i].command)
+                self.execute(plan[i].command)
+            else:
+                macroaction = self.environment.macroaction
+                macroaction.add_arm(self.robot)
+                macroaction.gmp = True
+                macroaction.teleport = False
+                command, aux = macroaction.execute(config = self.environment.get_current_config(), embedding = plan[i].action, sim=True)
+                if(aux != None):
+                    self.links.append(aux)
+                # Restore the state
+                if(command is not None):
+                    self.execute(command)
+                    self.environment.run_until_stable(hook = self.hook, dt=0.01)
+                commands.append(command)
 
         # # Remove all the links
         # for (link_object, link, link_transform, objobjlink) in self.links:

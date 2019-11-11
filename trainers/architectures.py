@@ -31,7 +31,6 @@ class Flatten(nn.Module):
 	def forward(self, x):
 		return x.view(x.size(0), -1)
 
-
 class ConvWorldModel(nn.Module):
 	def __init__(self, config_size=9, num_perspectives=1):
 		super(ConvWorldModel, self).__init__()
@@ -42,12 +41,11 @@ class ConvWorldModel(nn.Module):
 	def forward(self, inputs):
 		return self.conv(inputs)
 
-
 class SkinnyWorldModel(nn.Module):
 	def __init__(self, config_size=9):
 		super(SkinnyWorldModel, self).__init__()
 		hidden = 128
-		self.mlp = nn.Linear(config_size, hidden)
+		self.mlp = nn.Sequential(nn.Linear(config_size, hidden))
 
 	def forward(self, config):
 		l = self.mlp(config)

@@ -38,7 +38,9 @@ from gym import spaces
 from CuriousSamplePlanner.tasks.environment import Environment
 from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.tasks.macroactions import PickPlace, AddLink, MacroAction
+from CuriousSamplePlanner.tasks.state import State
 from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
+
 
 
 class ThreeBlocks(Environment):
@@ -52,14 +54,12 @@ class ThreeBlocks(Environment):
 		else:
 			self.robot = None
 
-
 		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
 		set_default_camera()
 		self.green_block = p.loadURDF("models/box_green.urdf", useFixedBase=False)
 		self.red_block = p.loadURDF("models/box_red.urdf", useFixedBase=False)
 		self.blue_block = p.loadURDF("models/box_blue.urdf", useFixedBase=False)
 		self.perspectives = [(0, -90)]
-		#self.perspectives = [(45, -10)]
 
 		self.objects = [self.green_block, self.red_block, self.blue_block]
 		# Set up the state space and action space for this task
@@ -69,7 +69,8 @@ class ThreeBlocks(Environment):
 								# AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 							])
 		self.action_space_size = self.macroaction.action_space_size
-		self.config_size = 3*6+len(self.macroaction.link_status) # (4 for links)
+		state = State(len(self.objects), len(self.macroaction.link_status))
+		self.config_size =  state.config_size # (4 for links)
 		print(self.config_size)
 		self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
 
@@ -101,12 +102,12 @@ class ThreeBlocks(Environment):
 		vals.sort()
 
 		# Two stack
-		# if( (vals[0] > 0.06) or (vals[1] > 0.06) or (vals[2] > 0.06)):
-		# 	return True
+		if( (vals[0] > 0.06) or (vals[1] > 0.06) or (vals[2] > 0.06)):
+			return True
 
 		# Three stack
-		if(vals[0]<0.06 and (vals[1] < 0.16 and vals[1] > 0.06) and (vals[2] > 0.16)):
-			return True
+		# if(vals[0]<0.06 and (vals[1] < 0.16 and vals[1] > 0.06) and (vals[2] > 0.16)):
+		# 	return True
 		return False
 
 

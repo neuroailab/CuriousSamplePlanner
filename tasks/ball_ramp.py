@@ -42,8 +42,10 @@ class BallRamp(Environment):
 		super(BallRamp, self).__init__(*args)  
 
 		connect(use_gui=False)
-		# self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
-		self.robot=None
+		if(self.detailed_gmp):
+			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
+		else:
+			self.robot = None
 
 		set_default_camera()
 		self.blue_ball = p.loadURDF("models/blue_ball.urdf", useFixedBase=False)

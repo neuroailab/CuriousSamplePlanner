@@ -32,21 +32,21 @@ from scipy.special import softmax
 
 
 class GraphNode():
-	def __init__(self, config, preconfig, action, control=None, node_key=0):
+	def __init__(self, config, preconfig, action, command=None, node_key=0):
 		self.config = config
 		self.preconfig = preconfig
 		self.node_key = node_key
 		self.action = action
-		self.control = control
+		self.command = command
 		self.novelty = 0
+
+	def set_novelty_score(self, novelty):
+		self.novelty = novelty
 
 	def conf_equals(self, other_conf):
 		if(dist(other_conf, self.config)<0.02):
 			return True
 		return False
-
-	def set_novelty_score(self, novelty):
-		self.novelty = novelty
 
 	def get_batch_data(self):
 		return self.config, self.preconfig
@@ -98,9 +98,9 @@ class PlanGraph(Dataset):
 			list(self.plan_graph.keys())[node_index+1].set_novelty_score(losses[loss_index].item())
 
 
-	def add_node(self, conf, preconf, action, parent_index, control=None):
+	def add_node(self, conf, preconf, action, parent_index, command=None):
 		parent = self.find_node(parent_index)
-		new_node = GraphNode(conf, preconf, action, node_key=self.node_key, control=control)
+		new_node = GraphNode(conf, preconf, action, node_key=self.node_key, command=command)
 		self.plan_graph[new_node] = []
 		if(parent != None):
 			self.plan_graph[parent].append(new_node)
@@ -123,4 +123,6 @@ class PlanGraph(Dataset):
 		print(self.plan_graph)
 		path = astar(start_node, goal_node, distance, self.plan_graph, collision)
 		print(path)
+		for node_i in range(1, len(path)):
+			print(path[node_i].command)
 		return path

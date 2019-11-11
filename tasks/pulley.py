@@ -54,10 +54,12 @@ class PulleySeesaw(Environment):
 	def __init__(self, *args):
 		super(PulleySeesaw, self).__init__(*args)  
 		# connect(use_gui=not torch.cuda.is_available())
-		connect(use_gui=False)
+		connect(use_gui=True)
 
-		print("initting env")
-		self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
+		if(self.detailed_gmp):
+			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
+		else:
+			self.robot = None
 		self.KNOT = 0.1
 		self.NOKNOT = 0
 		self.break_on_timeout = True

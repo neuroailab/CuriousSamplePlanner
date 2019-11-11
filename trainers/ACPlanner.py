@@ -85,6 +85,7 @@ class ACPlanner(Planner):
 			added_base_count = 0
 			for en_index, hl_index in enumerate(high_loss_indices):
 				input, target, pretarget, action, _, _, _, parent_index, _ = self.experience_replay.__getitem__(hl_index)
+				command = self.experience_replay.get_command(hl_index)
 				ntarget = target.cpu().numpy()
 				npretarget = pretarget.cpu().numpy()
 				if (not self.graph.is_node(ntarget)):
@@ -96,7 +97,7 @@ class ACPlanner(Planner):
 										+ ',parent_index=' + str(int(parent_index.item()))
 										+ ',node_index=' + str(self.graph.node_key) + '.jpg',
 										take_picture(perspective[0], perspective[1], 0, size=512))
-					self.graph.add_node(ntarget, npretarget, action.cpu().numpy(), torch.squeeze(parent_index).item())
+					self.graph.add_node(ntarget, npretarget, action.cpu().numpy(), torch.squeeze(parent_index).item(), command = command)
 					added_base_count += 1
 				if (added_base_count == self.growth_factor):
 					break

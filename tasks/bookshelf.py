@@ -45,8 +45,10 @@ class BookShelf(Environment):
 		connect(use_gui=False)
 
 		self.arm_size = 1
-		# self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
-		self.robot = None
+		if(self.detailed_gmp):
+			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
+		else:
+			self.robot = None
 
 		self.current_constraint_id = None
 		self.default_links = [0]

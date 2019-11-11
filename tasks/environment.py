@@ -59,15 +59,15 @@ class Environment():
                 value, policy_action, action_log_prob, recurrent_hidden_states = self.actor_critic.act(torch.unsqueeze(obs,0), opt_cuda(torch.tensor([])), 1)
                 m = torch.nn.Tanh()
                 policy_action = m(policy_action)
-            # Curious Action Selection or Uniform Action Selection
-
                 action = policy_action
-            return (action, action_log_prob, value, int(self.macroaction.execute(action, config) is not None))
+            command, feasible =  self.macroaction.execute(action, config)
+            return (action, action_log_prob, value,  int(feasible is not None), command)
         else:
             # Get the macroaction that is being executed
             action = action[0].detach().cpu().numpy()
             config = self.get_current_config()
-            return (action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), int(self.macroaction.execute(action, config) is not None))
+            command, feasible =  self.macroaction.execute(action, config)
+            return (action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), int(feasible is not None), command)
 
 
 
@@ -136,6 +136,7 @@ class Environment():
 
     def collect_samples(self, graph):
         features = []
+        commands = []
         states = torch.zeros([self.nsamples_per_update, self.config_size]).type(torch.FloatTensor)
         prestates = torch.zeros([self.nsamples_per_update, self.config_size]).type(torch.FloatTensor)
         parents = torch.zeros([self.nsamples_per_update, 1]).type(torch.FloatTensor)
@@ -147,6 +148,7 @@ class Environment():
         goal_prestate = None
         goal_parent = None
         goal_action = None
+        goal_command = None
 
         # starting_nodes = graph.expand_node(self.nsamples_per_update)
         for i in range(self.nsamples_per_update):
@@ -154,7 +156,7 @@ class Environment():
                 parent = graph.expand_node(1)[0]
                 self.set_state(parent.config)
                 embedding = torch.unsqueeze(torch.tensor(np.random.uniform(low=-1, high=1, size=self.action_space_size)),0)
-                (action, action_log_prob, value, feasible) = self.take_action(embedding)
+                (action, action_log_prob, value, feasible, command) = self.take_action(embedding)
                 if action is not None:
                     break
 
@@ -200,6 +202,7 @@ class Environment():
                 img_arr = torch.zeros((1, 3, 84, 84))
 
             features.append(img_arr)
+            commands.append(command)
             parents[i, :] = torch.tensor(parent.node_key)
             actions[i, :] = torch.tensor(action)
             action_log_probs[i, :] = action_log_prob.detach()
@@ -213,12 +216,13 @@ class Environment():
                 goal_parent = parent.node_key
                 goal_action = action
                 goal_prestate = preconfig
+                goal_command = command
                 break
 
 
         return features, states[:i + 1, :], prestates[:i + 1, :],\
                actions[:i + 1, :], action_log_probs[:i + 1, :], values[:i + 1, :], feasibles[:i + 1, :], parents[:i + 1, :], \
-               goal_config, goal_prestate, goal_parent, goal_action
+               goal_config, goal_prestate, goal_parent, goal_action, goal_command, commands
 
     def init_environment(self):
         self.set_state(self.get_start_state())

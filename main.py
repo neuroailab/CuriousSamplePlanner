@@ -31,7 +31,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "sample_cap": 1e7, 
         "batch_size": 128,
         "node_sampling": "uniform",
-        "mode": "RandomStateEmbeddingPlanner",
+        "mode": "StateEstimationPlanner",
         "feasible_training": True,
         "nsamples_per_update": 1024,
         "training": True, 

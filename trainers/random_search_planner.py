@@ -31,6 +31,9 @@ class RandomSearchPlanner(ACPlanner):
 	   super(RandomSearchPlanner, self).__init__(*args)
 
 
+	def update_novelty_scores(self):
+		pass	
+
 	def save_params(self):
 		pass
 		

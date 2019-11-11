@@ -267,7 +267,6 @@ def get_top_grasps(body, under=False, tool_pose=TOOL_POSE, body_pose=unit_pose()
             rotate_z = Pose(euler=[0, 0, i * math.pi])
             grasps += [multiply(tool_pose, translate_z, rotate_z,
                                 reflect_z, translate_center, body_pose)]
-    print(len(grasps))
     return grasps
 
 def get_side_grasps(body, under=False, tool_pose=TOOL_POSE, body_pose=unit_pose(),
@@ -293,7 +292,6 @@ def get_side_grasps(body, under=False, tool_pose=TOOL_POSE, body_pose=unit_pose(
                 grasps += [multiply(tool_pose, translate_z, rotate_z, swap_xz,
                                     translate_center, body_pose)]  # , np.array([l])
 
-    print(len(grasps))
     return grasps
 #####################################
 

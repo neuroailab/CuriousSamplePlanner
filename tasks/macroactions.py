@@ -56,7 +56,7 @@ class MacroAction():
 		return sum([macro.num_selectors+macro.num_params for macro in self.macroaction_list])
 
 	def reparameterize(self, block_to_move, pos):
-		r = reparameterize(pos[1].item(), 0.3, 0.7)
+		r = reparameterize(pos[1].item(), 0.4, 0.7)
 		height = reparameterize(pos[2].item(), 0.1, self.reachable_max)
 		theta = reparameterize(pos[0].item(), -math.pi, math.pi)
 		yaw = reparameterize(pos[3].item(), -math.pi, math.pi)
@@ -158,9 +158,10 @@ class PickPlace(MacroAction):
 		saved_world = WorldSaver()
 		for notc in notcs:
 			contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
-			if(len(contact)>0):
+			if(len(contact) > 0):
 				if(contact[0][5][2]>pos[2]):
 					return (None, False)
+
 		set_pose(block_to_move, goal_pose)
 		for notc in notcs:
 			contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
@@ -217,7 +218,6 @@ class PickPlace(MacroAction):
 								  path3.body_paths +
 								  path4.body_paths), True)
 
-		print("FAIL")
 		return (None, False)
 
 	def execute(self, block_to_move, teleport_pose, sim=False):

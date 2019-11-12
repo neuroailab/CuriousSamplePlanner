@@ -16,15 +16,12 @@ from CuriousSamplePlanner.planning_pybullet.pybullet_tools.kuka_primitives impor
 from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
     Pose, Point, Euler, set_default_camera, stable_z, \
     BLOCK_URDF, load_model, wait_for_user, disconnect, DRAKE_IIWA_URDF, user_input, update_state, disable_real_time,inverse_kinematics,end_effector_from_body,approach_from_grasp, get_joints, get_joint_positions
-
-
 from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import get_pose, set_pose, get_movable_joints, \
-    set_joint_positions, add_fixed_constraint, enable_real_time, disable_real_time, joint_controller, \
+    set_joint_positions, add_fixed_constraint, add_fixed_constraint_2, enable_real_time, disable_real_time, joint_controller, \
     enable_gravity, get_refine_fn, user_input, wait_for_duration, link_from_name, get_body_name, sample_placement, \
     end_effector_from_body, approach_from_grasp, plan_joint_motion, GraspInfo, Pose, INF, Point, \
     inverse_kinematics, pairwise_collision, remove_fixed_constraint, Attachment, get_sample_fn, \
     step_simulation, refine_path, plan_direct_joint_motion, get_joint_positions, dump_world, get_link_pose,control_joints
-
 from CuriousSamplePlanner.planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach
 import pickle
 import torch
@@ -54,34 +51,54 @@ class Environment():
         self.arm_size=1
 
     def config_state_attrs(self, linking=False):
-        state = State(len(self.objects), len(self.static_objects),len(self.macroaction.link_status))
+        self.state = State(len(self.objects), len(self.static_objects),len(self.macroaction.link_status))
         self.action_space_size = self.macroaction.action_space_size
-        self.config_size =  state.config_size
+        self.config_size =  self.state.config_size
         if(not linking):
-            self.predict_mask = state.positions
+            self.predict_mask = self.state.positions
         else:
-            self.predict_mask = state.positions+state.links
+            self.predict_mask = self.state.positions+self.state.links
 
         self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
         self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
 
 
     def take_action(self, action):
+        # Get the macroaction that is being executed
+        action = action[0].detach().cpu().numpy()
+        config = self.get_current_config()
         if(self.asm_enabled):
             with torch.no_grad():
                 obs =  opt_cuda(torch.tensor(self.get_current_config()).type(torch.FloatTensor))
                 value, policy_action, action_log_prob, recurrent_hidden_states = self.actor_critic.act(torch.unsqueeze(obs,0), opt_cuda(torch.tensor([])), 1)
                 m = torch.nn.Tanh()
                 policy_action = m(policy_action)
-                action = policy_action
+                action = policy_action[0].detach().cpu().numpy()
             feasible, command =  self.macroaction.execute(action, config)
-            return (action, action_log_prob, value,  int(feasible is not None), command)
+            return (action, action_log_prob, value,  int(feasible), command)
         else:
-            # Get the macroaction that is being executed
-            action = action[0].detach().cpu().numpy()
-            config = self.get_current_config()
             feasible, command =  self.macroaction.execute(action, config)
-            return (action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), int(feasible is not None), command)
+            return (action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), int(feasible), command)
+
+
+    def remove_constraints(self):
+        if(len(self.macroaction.link_status)>0):
+            for obj1_index in range(len(self.objects)):
+                for obj2_index in range(obj1_index, len(self.objects)):
+                    link_index = obj1_index*len(self.objects)+obj2_index
+                    if(self.macroaction.links[link_index] is not None):
+                        p.removeConstraint(self.macroaction.links[link_index])
+                        self.macroaction.links[link_index] = None
+
+    def add_constraints(self, conf):
+        if(len(self.macroaction.link_status)>0):
+            for obj1_index in range(len(self.objects)):
+                for obj2_index in range(obj1_index, len(self.objects)):
+                    link_index = obj1_index*len(self.objects)+obj2_index
+                    if(conf[self.state.links[link_index]]==1):
+                        self.macroaction.links[link_index] = add_fixed_constraint_2(self.objects[obj1_index], self.objects[obj2_index])
+            # Update link status
+            self.macroaction.link_status = list(conf[-len(self.macroaction.link_status):len(conf)])
 
     # These function are overwritten in subclasses
     @property

@@ -30,14 +30,14 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     # Set up the hyperparameters
     experiment_dict = {
         # Hyps
-        "task": "FiveBlocks",
+        "task": "ThreeBlocks",
         "learning_rate": 5e-5,  
         "sample_cap": 1e7, 
         "batch_size": 128,
         "node_sampling": "softmax",
         "mode": "RandomStateEmbeddingPlanner",
         "feasible_training": True,
-        "nsamples_per_update": 128,
+        "nsamples_per_update": 1024,
         "training": True, 
         "exp_id": exp_id,
         "load_id": load_id,
@@ -61,7 +61,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     #experiment_dict['load_path'] = 'example_images/' + experiment_dict["load_id"]
     adaptive_batch_lr = {
         "StateEstimationPlanner": 0.003,
-        "RandomStateEmbeddingPlanner": 0.0003,
+        "RandomStateEmbeddingPlanner": 0.00005,
         "EffectPredictionPlanner": 0.001,
         "RandomSearchPlanner": 0 
     }

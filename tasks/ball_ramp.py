@@ -85,10 +85,12 @@ class BallRamp(Environment):
 		return False
 
 	def set_state(self, conf):
+		self.remove_constraints()
 		i = 0
 		for block in self.objects:
 			set_pose(block, Pose(Point(x = conf[i], y = conf[i+1], z=conf[i+2]), Euler(roll = conf[i+3], pitch = conf[i+4], yaw=conf[i+5])))
 			i+=6
+		self.add_constraints(conf)
 
 	def get_current_config(self):
 		bpos, bquat = p.getBasePositionAndOrientation(self.blue_ball)

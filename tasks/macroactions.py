@@ -43,9 +43,12 @@ class MacroAction():
 		self.reachable_max = 0.8
 		self.macroaction_list = macroaction_list
 		self.link_status = []
+		self.links = []
 		for macroaction in self.macroaction_list:
 			self.link_status += [0 for _ in range(macroaction.num_links)]
+			self.links += [None for _ in range(macroaction.num_links)]
 			self.objects = macroaction.objects
+
 
 	def add_arm(self, arm):
 		self.robot = arm
@@ -126,7 +129,6 @@ class MacroAction():
 			(feasible, planning_commands, link_status) = self.macroaction_list[macroaction_index].execute(embedding[mask_start:mask_end], self.link_status, sim)
 			if(link_status is not None):
 				self.link_status = link_status
-				print(self.link_status)
 
 			return (feasible, planning_commands)
 
@@ -362,7 +364,6 @@ class AddLink(MacroAction):
 				return (True, feas_command, link_status)
 
 			else:
-				print("Linking")
 				# Matrix should by symmetric
 				link_status[object1_index*len(self.objects)+object2_index] = 1
 				link_status[object2_index*len(self.objects)+object1_index] = 1

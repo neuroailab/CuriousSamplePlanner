@@ -102,22 +102,15 @@ class BookShelf(Environment):
 		
 
 	def set_state(self, conf):
-		if(self.current_constraint_id is not None):
-			p.removeConstraint(self.current_constraint_id)
-			self.current_constraint_id = None
 
-
+		self.remove_constraints()
 		set_pose(self.blue_rod_1, Pose(Point(x = conf[0], y = conf[1], z=conf[2]), 
 									   Euler(roll=conf[3], pitch=conf[4], yaw=conf[5])))
 		set_pose(self.blue_rod_2, Pose(Point(x = conf[6], y = conf[7], z=conf[8]), 
 									   Euler(roll=conf[9], pitch=conf[10], yaw=conf[11])))
 		set_pose(self.book, Pose(Point(x = conf[12], y = conf[13], z=conf[14]), 
 								 Euler(roll=conf[15], pitch=conf[16], yaw=conf[17])))
-
-		if(sum(conf[-4:])>0):
-			self.current_constraint_id = add_fixed_constraint_2(self.blue_rod_1, self.blue_rod_2)
-
-		self.macroaction.link_status = list(conf[-len(self.macroaction.link_status):len(conf)])
+		self.add_constraints(conf)
 		# Pybullet sucks
 		time.sleep(0.001)
 

@@ -62,12 +62,12 @@ class ACPlanner(Planner):
 		if(self.experiment_dict["enable_asm"]):
 			with torch.no_grad():
 				next_value = self.environment.actor_critic.get_value(
-					rollouts.obs[-1], rollouts.recurrent_hidden_states[-1],
-					rollouts.masks[-1]).detach()
+					self.rollouts.obs[-1], self.rollouts.recurrent_hidden_states[-1],
+					self.rollouts.masks[-1]).detach()
 
-			rollouts.compute_returns(next_value, False, 0, 0, False)
-			value_loss, action_loss, dist_entropy = self.agent.update(rollouts)
-			rollouts.after_update()
+			self.rollouts.compute_returns(next_value, False, 0, 0, False)
+			value_loss, action_loss, dist_entropy = self.agent.update(self.rollouts)
+			self.rollouts.after_update()
 
 		# Get the losses from all observations
 		whole_losses, whole_indices, whole_feasibles = self.calc_novelty()

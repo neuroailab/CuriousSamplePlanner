@@ -34,7 +34,7 @@ class RandomStateEmbeddingPlanner(ACPlanner):
 	def __init__(self, *args):
 		super(RandomStateEmbeddingPlanner, self).__init__(*args)
 		self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))
-		self.transform = list(range(self.environment.predict_mask))
+		self.transform = list(self.environment.predict_mask)
 		random.shuffle(self.transform)
 		self.criterion = nn.MSELoss()
 		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
@@ -92,7 +92,6 @@ class RandomStateEmbeddingPlanner(ACPlanner):
 		for _, batch in enumerate(
 				DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
 			inputs, labels, prestates, acts, _, _, feasible, _, index = batch
-
 			targets = labels[:, self.transform]
 			outputs = self.worldModel(labels)
 			losses = []

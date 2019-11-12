@@ -37,11 +37,8 @@ def opt_cuda(t):
 		cuda="cuda:"+str(sys.argv[2])
 	else:
 		cuda="cuda:0"
-	if(torch.cuda.is_available()):
-		#cuda = "cuda:4"
-		return t.cuda(cuda)
-	else:
-		return t
+	return t.cuda(cuda)
+
 
 def check_state_collision(body1, body2):
 	return len(p.getClosestPoints(bodyA=body1, bodyB=body2, distance=0.001, physicsClientId=0)) != 0

@@ -89,7 +89,6 @@ class ACPlanner(Planner):
 			ntarget = target.cpu().numpy()
 			npretarget = pretarget.cpu().numpy()
 			if (not self.graph.is_node(ntarget)):
-				print(ntarget)
 				self.environment.set_state(ntarget)
 				for perspective in self.environment.perspectives:
 					imageio.imwrite(self.exp_path

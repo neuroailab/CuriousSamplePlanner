@@ -30,7 +30,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     # Set up the hyperparameters
     experiment_dict = {
         # Hyps
-        "task": "ThreeBlocks",
+        "task": "FiveBlocks",
         "learning_rate": 5e-4,  
         "sample_cap": 1e7, 
         "batch_size": 128,

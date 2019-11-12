@@ -44,7 +44,7 @@ from CuriousSamplePlanner.tasks.state import State
 class BookShelf(Environment):
 	def __init__(self, *args):
 		super(BookShelf, self).__init__(*args)
-		connect(use_gui=True)
+		connect(use_gui=False)
 
 		self.arm_size = 1
 		if(self.detailed_gmp):

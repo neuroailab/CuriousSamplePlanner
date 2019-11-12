@@ -106,7 +106,7 @@ class BallRamp(Environment):
 		while(collision):
 			z = stable_z(self.green_block, self.floor)
 			pos1, pos2, pos3, pos4 = self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0)
-			state = State(len(self.objects), len(self.macroaction.link_status))
+			state = State(len(self.objects), len(self.static_objects), len(self.macroaction.link_status))
 			state.set_position(0, pos1[0], pos1[1], z)
 			state.set_position(1, pos2[0], pos2[1], z)
 			state.set_position(2, pos3[0], pos3[1], z)

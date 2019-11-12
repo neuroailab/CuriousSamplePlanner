@@ -59,7 +59,7 @@ class ThreeBlocks(Environment):
 		self.green_block = p.loadURDF("models/box_green.urdf", useFixedBase=False)
 		self.red_block = p.loadURDF("models/box_red.urdf", useFixedBase=False)
 		self.blue_block = p.loadURDF("models/box_blue.urdf", useFixedBase=False)
-		
+
 		self.objects = [self.green_block, self.red_block, self.blue_block]
 		self.static_objects = []
 
@@ -125,7 +125,7 @@ class ThreeBlocks(Environment):
 		z = stable_z(self.green_block, self.floor)
 		while(collision):
 			pos1, pos2, pos3 = self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0)
-			state = State(len(self.objects), len(self.macroaction.link_status))
+			state = State(len(self.objects), len(self.static_objects), len(self.macroaction.link_status))
 			state.set_position(0, pos1[0], pos1[1], z)
 			state.set_position(1, pos2[0], pos2[1], z)
 			state.set_position(2, pos3[0], pos3[1], z)

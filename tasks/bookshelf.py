@@ -38,11 +38,13 @@ from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.tasks.macroactions import PickPlace, AddLink, MacroAction
 from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 from gym import spaces
+from CuriousSamplePlanner.tasks.state import State
+
 
 class BookShelf(Environment):
 	def __init__(self, *args):
 		super(BookShelf, self).__init__(*args)
-		connect(use_gui=False)
+		connect(use_gui=True)
 
 		self.arm_size = 1
 		if(self.detailed_gmp):
@@ -61,7 +63,7 @@ class BookShelf(Environment):
 		set_pose(self.shelf, Pose(Point(x= -0.2 , y=-1.6, z=-0.010), Euler(yaw=0, pitch=0, roll=math.pi/2)))
 
 		self.book = p.loadURDF("models/book/book.urdf", globalScaling=0.15, useFixedBase=False)
-		self.book_pos = [0.06, -1.43, 0.48]
+		self.book_pos = [0.06, -1.43, 0.488]
 		self.book_rot = [math.pi/2, 0, 0]
 		set_pose(self.book, Pose(Point(x=self.book_pos[0], y=self.book_pos[1], z=self.book_pos[2]), Euler(roll=self.book_rot[0], pitch=self.book_rot[1], yaw=self.book_rot[2])))
 
@@ -72,19 +74,21 @@ class BookShelf(Environment):
 		set_pose(self.blue_rod_2, Pose(Point(x=-0.7, y=0, z=1.2), Euler(yaw=0, pitch=0, roll=0)))
 
 		self.objects = [self.blue_rod_1, self.blue_rod_2]
-		self.break_on_timeout = True
+		self.static_objects = [self.book]
+
+		self.perspectives = [(0, -90)]
+		self.break_on_timeout = False
+
 		self.macroaction = MacroAction([
 								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 								AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 							])
-		self.action_space_size = self.macroaction.action_space_size
-		self.config_size = 6*3+len(self.macroaction.link_status) # (4 for links)
-		self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
+
+		# Config state attributes
+		self.config_state_attrs(linking=True)
 
 		p.setGravity(0, 0, -10, physicsClientId=0)
 
-		self.perspectives = [(0, -90)]
-		self.predict_mask = [0, 1, 2, 6, 7, 8, 12, 13, 14, 18, 19, 20, 21] # All of the positional properties and the links
 		self.break_on_timeout = True
 
 		self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
@@ -114,7 +118,6 @@ class BookShelf(Environment):
 			self.current_constraint_id = add_fixed_constraint_2(self.blue_rod_1, self.blue_rod_2)
 
 		self.macroaction.link_status = list(conf[-len(self.macroaction.link_status):len(conf)])
-
 		# Pybullet sucks
 		time.sleep(0.001)
 
@@ -141,10 +144,10 @@ class BookShelf(Environment):
 		b1pos, b1quat = p.getBasePositionAndOrientation(self.blue_rod_1)
 		b2pos, b2quat = p.getBasePositionAndOrientation(self.blue_rod_2)
 		bookpos, bookquat = p.getBasePositionAndOrientation(self.book)
+
 		# Reduce configuration redundancy/complexity
 		b1e = p.getEulerFromQuaternion(b1quat)
 		b2e = p.getEulerFromQuaternion(b2quat)
-		
 		booke = p.getEulerFromQuaternion(bookquat)
 
 		# print("getting config: "+str(int(self.current_constraint_id is not None)))
@@ -159,7 +162,6 @@ class BookShelf(Environment):
 		collision = True
 		z = 0.02
 		while(collision):
-			# conf = np.array(self.reachable_pos(z=z)+[0, 0, random.uniform(-math.pi, math.pi)]+self.reachable_pos(z=z)+[0, 0, random.uniform(-math.pi, math.pi)]+self.book_pos+self.book_rot+self.default_links)
 			conf = np.array(self.reachable_pos(z=z)+[0, 0, random.uniform(-math.pi, math.pi)]+self.reachable_pos(z=z)+[0, 0, random.uniform(-math.pi, math.pi)]+self.book_pos+self.book_rot+self.macroaction.link_status)
 			self.set_state(conf)
 			collision = check_pairwise_collisions([self.blue_rod_1, self.blue_rod_2, self.shelf])

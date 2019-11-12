@@ -30,11 +30,11 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     # Set up the hyperparameters
     experiment_dict = {
         # Hyps
-        "task": "PulleySeesaw",
+        "task": "BookShelf",
         "learning_rate": 5e-5,  
         "sample_cap": 1e7, 
         "batch_size": 128,
-        "node_sampling": "uniform",
+        "node_sampling": "softmax",
         "mode": "RandomStateEmbeddingPlanner",
         "feasible_training": True,
         "nsamples_per_update": 1024,

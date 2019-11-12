@@ -66,6 +66,11 @@ class MacroAction():
 		return teleport_pose
 
 	def execute(self, embedding, config, sim=False):
+
+		"""
+			Output: (feasible, planning command)
+
+		"""
 		total_selectors = sum([self.macroaction_list[macro_idx].num_selectors for macro_idx in range(len(self.macroaction_list))])
 		max_element = np.argmax(embedding[0:total_selectors])
 		prev = 0
@@ -100,6 +105,7 @@ class MacroAction():
 
 			# Now we need to perform forward dynamics on the connected objects
 			for connected_block in connected_blocks:
+				print("MOVING CONNECTED BLOCK")
 				b1pos, b1quat = p.getBasePositionAndOrientation(block_to_move)
 				b1e = p.getEulerFromQuaternion(b1quat)
 				b2pos, b2quat = p.getBasePositionAndOrientation(connected_block)
@@ -111,12 +117,18 @@ class MacroAction():
 				other_goal_pose = multiply(teleport_pose, multiply(invert(start_pose), other_pose))
 				set_pose(connected_block, other_goal_pose)
 
-			return self.macroaction_list[macroaction_index].execute(block_to_move, teleport_pose, sim)
+			(feasible, planning_commands, _) = self.macroaction_list[macroaction_index].execute(block_to_move, teleport_pose, sim)
+			return (feasible, planning_commands)
 
 		elif(isinstance(self.macroaction_list[macroaction_index], AddLink)):
 			mask_start = sum([self.macroaction_list[macro_idx].num_selectors for macro_idx in range(macroaction_index)])
 			mask_end = mask_start+self.macroaction_list[macroaction_index].num_selectors
-			return self.macroaction_list[macroaction_index].execute(embedding[mask_start:mask_end], self.link_status, sim)
+			(feasible, planning_commands, link_status) = self.macroaction_list[macroaction_index].execute(embedding[mask_start:mask_end], self.link_status, sim)
+			if(link_status is not None):
+				self.link_status = link_status
+				print(self.link_status)
+
+			return (feasible, planning_commands)
 
 class PickPlace(MacroAction):
 	def __init__(self, objects=[], robot=None, fixed = [], gmp=False, *args):
@@ -166,7 +178,6 @@ class PickPlace(MacroAction):
 		for notc in notcs:
 			contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
 			if(len(contact)>0):
-				# if(contact[0][5][2]>pos[2]):
 				return (None, False)
 		saved_world.restore()
 
@@ -222,15 +233,15 @@ class PickPlace(MacroAction):
 
 	def execute(self, block_to_move, teleport_pose, sim=False):
 		"""
-			Output: (planning commands, auxiliary output)
+			Output: (feasible, planning commands, auxiliary output)
 		"""
 		# Get the selected position
 		(feas_command, feasible) = self.feasibility_check(block_to_move, teleport_pose, sim)
 		if(feasible == True):
 			set_pose(block_to_move, teleport_pose)
-			return (feas_command, None)
+			return (True, feas_command, None)
 		else:
-			return (None, None)
+			return (False, None, None)
 
 class Link(ApplyForce):
 	def __init__(self, link_point1):
@@ -332,29 +343,31 @@ class AddLink(MacroAction):
 
 	def execute(self, embedding, link_status, sim=False):
 		"""
-			Output: (planning commands, auxiliary output)
+			Output: (feasible, planning commands, auxiliary output)
+			Note planning commands
 		"""
 		object_pair_index = np.argmax(embedding, axis=0)
 		object1_index = int(float(object_pair_index)/len(self.objects))
 		object2_index = int(float(object_pair_index)%len(self.objects))
 		# Just check to make sure I have this calculation right
 		assert object1_index*len(self.objects)+object2_index == object_pair_index or object2_index*len(self.objects)+object1_index == object_pair_index
+		# Not already linked
+		(feas_command, feasible) = self.feasibility_check(self.objects[object1_index], self.objects[object2_index], sim)
+		if(feasible == True):
+			if(link_status[object_pair_index] == 1):
+				# Already linked, must unlink
+				# Matrix should by symmetric
+				link_status[object1_index*len(self.objects)+object2_index] = 0
+				link_status[object2_index*len(self.objects)+object1_index] = 0
+				return (True, feas_command, link_status)
 
-		if(link_status[object_pair_index] == 1):
-			# Already linked, must unlink
-			# Matrix should by symmetric
-			link_status[object1_index*len(self.objects)+object2_index] = 0
-			link_status[object2_index*len(self.objects)+object1_index] = 0
-
-		else:
-			# Not already linked
-			(feas_command, feasible) = self.feasibility_check(self.objects[object1_index], self.objects[object2_index], sim)
-			if(feasible == True):
+			else:
+				print("Linking")
 				# Matrix should by symmetric
 				link_status[object1_index*len(self.objects)+object2_index] = 1
 				link_status[object2_index*len(self.objects)+object1_index] = 1
-				return (feas_command, link_status)
-			else:
-				return (None, None)
+				return (True, feas_command, link_status)
+		else:
+			return (False, None, None)
 
 

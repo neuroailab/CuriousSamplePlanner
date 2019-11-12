@@ -36,6 +36,8 @@ from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.tasks.macroactions import PickPlace, AddLink, MacroAction
 from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 from gym import spaces
+from CuriousSamplePlanner.tasks.state import State
+
 
 class BallRamp(Environment):
 	def __init__(self, *args):
@@ -53,19 +55,20 @@ class BallRamp(Environment):
 		self.green_block = p.loadURDF("models/box_green.urdf", useFixedBase=False)
 		self.purple_rod = p.loadURDF("models/purple_rod.urdf", useFixedBase=False)
 		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
+		
 		self.objects = [self.blue_ball, self.red_block, self.green_block, self.purple_rod]
-		self.ARM_LEN = 0.8
+		self.static_objects = []
+
 		self.perspectives = [(0, -90)]
+		
 		self.break_on_timeout = True
 		self.macroaction = MacroAction([
 								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
-								# AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp)
+								# AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 							])
-		self.action_space_size = self.macroaction.action_space_size
-		self.config_size = 4*6+len(self.macroaction.link_status) 
-		self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
-		self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
-		self.predict_mask = [0,1,2]+[6,7,8]+[12,13,14]+[18,19,20]
+
+		# Config state attributes
+		self.config_state_attrs()
 
 		p.setGravity(0, 0, -10)
 		p.stepSimulation(physicsClientId=0)
@@ -102,10 +105,12 @@ class BallRamp(Environment):
 		collision = True
 		while(collision):
 			z = stable_z(self.green_block, self.floor)
-			pos0, pos1, pos2, pos3 = self.reachable_pos(), self.reachable_pos(), self.reachable_pos(), self.reachable_pos()
-			euler = np.array([random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(-1, 1)])
-			conf = np.array([pos0[0], pos0[1], z, 0, 0, 0, pos1[0], pos1[1], z, 0, 0, 0, pos2[0], pos2[1], z,0, 0, 0, pos3[0], pos3[1], z, 0,0,0])
-			self.set_state(conf)
-
-			collision = check_pairwise_collisions([self.blue_ball, self.red_block, self.red_block, self.green_block, self.purple_rod, self.floor])
-		return conf
+			pos1, pos2, pos3, pos4 = self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0)
+			state = State(len(self.objects), len(self.macroaction.link_status))
+			state.set_position(0, pos1[0], pos1[1], z)
+			state.set_position(1, pos2[0], pos2[1], z)
+			state.set_position(2, pos3[0], pos3[1], z)
+			state.set_position(3, pos4[0], pos4[1], z)
+			self.set_state(state.config)
+			collision = check_pairwise_collisions(self.objects)
+		return state.config

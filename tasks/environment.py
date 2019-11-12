@@ -34,8 +34,10 @@ from torch.utils.data import Dataset, DataLoader
 import collections
 from motion_planners.discrete import astar
 import sys
-
+from CuriousSamplePlanner.tasks.state import State
 from CuriousSamplePlanner.scripts.utils import *
+from gym import spaces
+from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 
 
 class Environment():
@@ -43,7 +45,6 @@ class Environment():
         self.nsamples_per_update = experiment_dict['nsamples_per_update']
         self.asm_enabled = experiment_dict['enable_asm']
         self.detailed_gmp = experiment_dict['detailed_gmp']
-
         self.training = experiment_dict['training']
         if(experiment_dict['mode'] == "EffectPredictionPlanner" or experiment_dict['mode'] == "RandomStateEmbeddingPlanner"):
             self.image_based = False
@@ -51,6 +52,19 @@ class Environment():
             self.image_based = True
 
         self.arm_size=1
+
+    def config_state_attrs(self, linking=False):
+        state = State(len(self.objects), len(self.static_objects),len(self.macroaction.link_status))
+        self.action_space_size = self.macroaction.action_space_size
+        self.config_size =  state.config_size
+        if(not linking):
+            self.predict_mask = state.positions
+        else:
+            self.predict_mask = state.positions+state.links
+
+        self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
+        self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
+
 
     def take_action(self, action):
         if(self.asm_enabled):
@@ -60,17 +74,16 @@ class Environment():
                 m = torch.nn.Tanh()
                 policy_action = m(policy_action)
                 action = policy_action
-            command, feasible =  self.macroaction.execute(action, config)
+            feasible, command =  self.macroaction.execute(action, config)
             return (action, action_log_prob, value,  int(feasible is not None), command)
         else:
             # Get the macroaction that is being executed
             action = action[0].detach().cpu().numpy()
             config = self.get_current_config()
-            command, feasible =  self.macroaction.execute(action, config)
+            feasible, command =  self.macroaction.execute(action, config)
             return (action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), int(feasible is not None), command)
 
-
-
+    # These function are overwritten in subclasses
     @property
     def fixed(self):
         raise NotImplementedError
@@ -78,19 +91,13 @@ class Environment():
     def set_state(self, configuration):
         raise NotImplementedError
 
-    def take_random_action(self):
-        raise NotImplementedError
-
     def get_object_pose(self, object, action):
         raise NotImplementedError
-
-    def get_action_type(self, ma_index):
-        return "teleport"
 
     def check_goal_state(self, config):
         raise NotImplementedError
 
-
+    # Roll out for a fixed period of time or until stable
     def run_until_stable(self, hook=None, dt=0.001):
         time_limit = 1000
         config = self.get_current_config()
@@ -109,7 +116,8 @@ class Environment():
             config = config_t
             t+=1
 
-
+    # Reachability for the robotic arm. 
+    # TODO: Generalize for arbitrary robotic systems
     def reachable_pos(self, z=None):
         reachability = {
             0.0:(0.45,0.78),
@@ -126,10 +134,6 @@ class Environment():
         radius = random.uniform(reachability[int(z*10)/10.0][0], reachability[int(z*10)/10.0][1])
         angle = random.uniform(-math.pi, math.pi)
         return [math.sin(angle) * radius, math.cos(angle) * radius, z]
-
-
-    def flat_euler(self):
-        return [0, random.uniform(-math.pi, math.pi), random.uniform(-math.pi, math.pi)]
 
     def is_stable(self, old_conf, conf, count):
         return (dist(old_conf, conf)<5e-4, count>500)
@@ -176,12 +180,12 @@ class Environment():
                     break
 
                 if(timeout and not self.break_on_timeout):
-                    print("Lost object -- Resetting state")
+                    print("Timeout Reset")
                     while True:
                         parent = graph.expand_node(1)[0]
                         self.set_state(parent.config)
                         embedding = torch.unsqueeze(torch.tensor(np.random.uniform(low=-1, high=1, size=self.action_space_size)),0)
-                        (action, action_log_prob, value, feasible) = self.take_action(embedding)
+                        (action, action_log_prob, value, feasible, command) = self.take_action(embedding)
                         if action is not None:
                             break
 
@@ -219,13 +223,10 @@ class Environment():
                 goal_command = command
                 break
 
-
+        # TODO: Messy
         return features, states[:i + 1, :], prestates[:i + 1, :],\
                actions[:i + 1, :], action_log_probs[:i + 1, :], values[:i + 1, :], feasibles[:i + 1, :], parents[:i + 1, :], \
                goal_config, goal_prestate, goal_parent, goal_action, goal_command, commands
-
-    def init_environment(self):
-        self.set_state(self.get_start_state())
 
     # Special Gym wrappers
     def step(self, action):

@@ -23,43 +23,46 @@ from CuriousSamplePlanner.tasks.environment import Environment
 from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.tasks.macroactions import PickPlace, AddLink, MacroAction
 from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
+from CuriousSamplePlanner.tasks.state import State
 
 class FiveBlocks(Environment):
 	def __init__(self, *args):
 		super(FiveBlocks, self).__init__(*args)  
-		connect(use_gui=True)
+		connect(use_gui=False)
+
 		if(self.detailed_gmp):
 			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
 		else:
 			self.robot = None
-		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
-		self.ARM_LEN = 0.8
+
+		# Construct camera
 		set_default_camera()
 
 		# Load in the objects
+		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
 		self.green_block = p.loadURDF("models/box_green.urdf", useFixedBase=False)
 		self.red_block = p.loadURDF("models/box_red.urdf", useFixedBase=False)
 		self.blue_block = p.loadURDF("models/box_blue.urdf", useFixedBase=False)
 		self.purple_block = p.loadURDF("models/box_purple.urdf", useFixedBase=False)
 		self.cyan_block = p.loadURDF("models/box_yellow.urdf", useFixedBase=False)
 
+		self.objects = [self.green_block, self.red_block, self.blue_block, self.purple_block, self.cyan_block]
+		self.static_objects = []
+		
 		# Only used for some curiosity types
 		self.perspectives = [(0, -90)]
 
-		self.objects = [self.green_block, self.red_block, self.blue_block, self.purple_block, self.cyan_block]
-
 		# In this environment, if it times out, we know an object fell off the screen
 		self.break_on_timeout = False
+
+		# Set up macro-actions
 		self.macroaction = MacroAction([
 								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 								# AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
 							])
 
-		self.action_space_size = self.macroaction.action_space_size
-		self.config_size = 5*6+len(self.macroaction.link_status) # (4 for links)
-		self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
-		self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
-		self.predict_mask = [0,1,2]+[6,7,8]+[12,13,14]+[18,19,20]+[24,25,26]
+		# Config state attributes
+		self.config_state_attrs()
 
 		p.setGravity(0, 0, -10)
 		p.stepSimulation(physicsClientId=0)
@@ -99,8 +102,13 @@ class FiveBlocks(Environment):
 		z = stable_z(self.green_block, self.floor)
 		while(collision):
 			pos1, pos2, pos3, pos4, pos5 = self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0) 
-			conf = np.array([pos1[0], pos1[1], z] + [0, 0, 0] + [pos2[0], pos2[1], z] + [0, 0, 0] + [pos3[0], pos3[1], z] + [0, 0, 0] + [pos4[0], pos4[1], z] + [0, 0, 0] + [pos5[0], pos5[1], z] + [0, 0, 0]+self.macroaction.link_status)
-			self.set_state(conf)
-			collision = check_pairwise_collisions([self.green_block, self.red_block, self.blue_block, self.purple_block, self.cyan_block])
-		return conf
+			state = State(len(self.objects), len(self.macroaction.link_status))
+			state.set_position(0, pos1[0], pos1[1], z)
+			state.set_position(1, pos2[0], pos2[1], z)
+			state.set_position(2, pos3[0], pos3[1], z)
+			state.set_position(3, pos4[0], pos4[1], z)
+			state.set_position(4, pos5[0], pos5[1], z)
+			self.set_state(state.config)
+			collision = check_pairwise_collisions(self.objects)
+		return state.config
 

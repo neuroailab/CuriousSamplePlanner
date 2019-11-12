@@ -15,6 +15,7 @@ from torch import nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import sys
+import random
 
 from CuriousSamplePlanner.tasks.three_block_stack import ThreeBlocks
 
@@ -32,34 +33,24 @@ from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
 class RandomStateEmbeddingPlanner(ACPlanner):
 	def __init__(self, *args):
 		super(RandomStateEmbeddingPlanner, self).__init__(*args)
-		self.worldModelTarget = opt_cuda(SkinnyWorldModel(config_size=self.environment.config_size))
 		self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))
-		def weights_init_uniform(m):
-			classname = m.__class__.__name__            
-			# apply a uniform distribution to the weights and a bias=0
-			if classname.find('Linear') != -1:
-				m.weight.data.uniform_(0.0, 0.06)
-				m.bias.data.fill_(0)
-
-		self.worldModelTarget.apply(weights_init_uniform)
-		for param in self.worldModelTarget.parameters():
-			param.requires_grad = False
-		self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))
+		self.transform = list(range(self.environment.config_size))
+		random.shuffle(self.transform)
 		self.criterion = nn.MSELoss()
 		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
 
 
 	def update_novelty_scores(self):
 		if(len(self.graph)>0 and self.experiment_dict["node_sampling"] == "softmax"):
-			for _, (inputs, labels, prestates, node_key, index) in enumerate(DataLoader(self.graph, batch_size=self.batch_size, shuffle=True, num_workers=0)):
+			for _, (inputs, labels, prestates, node_key, index, _) in enumerate(DataLoader(self.graph, batch_size=self.batch_size, shuffle=True, num_workers=0)):
 				# TODO: Turn this into a data provider
 				outputs = opt_cuda(self.worldModel(opt_cuda(labels)).type(torch.FloatTensor))
+				targets = opt_cuda(labels.type(torch.FloatTensor))[:, self.transform]
 				#target_outputs = opt_cuda(self.worldModelTarget(opt_cuda(labels)).type(torch.FloatTensor))
-				target_outputs = opt_cuda(labels)
 				losses = []
 				states = []
 				for node in range(outputs.shape[0]):
-					losses.append(torch.unsqueeze(self.criterion(outputs[node, self.environment.predict_mask], target_outputs[node, self.environment.predict_mask]), dim=0))
+					losses.append(torch.unsqueeze(self.criterion(outputs[node, self.environment.predict_mask], targets[node, self.environment.predict_mask]), dim=0))
 					states.append(labels[node, self.environment.predict_mask])
 				self.graph.set_novelty_scores(index, losses)
 				
@@ -77,7 +68,8 @@ class RandomStateEmbeddingPlanner(ACPlanner):
 				inputs, labels, prestates, acts, acts_log_probs, values, feasible, _, index = batch
 				self.optimizer_world.zero_grad()
 				outputs = self.worldModel(labels)
-				loss = torch.mean((outputs[:, self.environment.predict_mask] - labels[:, self.environment.predict_mask]) ** 2, dim=1).reshape(-1, 1)
+				targets = labels[:, self.transform]
+				loss = torch.mean((outputs[:, self.environment.predict_mask] - targets[:, self.environment.predict_mask]) ** 2, dim=1).reshape(-1, 1)
 				Lw = loss.mean()
 				Lw.backward()
 				self.optimizer_world.step()
@@ -100,11 +92,13 @@ class RandomStateEmbeddingPlanner(ACPlanner):
 		for _, batch in enumerate(
 				DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
 			inputs, labels, prestates, acts, _, _, feasible, _, index = batch
+
+			targets = labels[:, self.transform]
 			outputs = self.worldModel(labels)
 			losses = []
 			for i in range(self.batch_size):
 				losses.append(torch.unsqueeze(
-					self.criterion(outputs[i, self.environment.predict_mask], labels[i, self.environment.predict_mask]),
+					self.criterion(outputs[i, self.environment.predict_mask], targets[i, self.environment.predict_mask]),
 					dim=0))
 				whole_feasibles.append(feasible[i].item())
 

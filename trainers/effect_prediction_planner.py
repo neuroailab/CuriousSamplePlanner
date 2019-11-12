@@ -24,7 +24,7 @@ from CuriousSamplePlanner.tasks.bookshelf import BookShelf
 
 from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.trainers.planner import Planner
-from CuriousSamplePlanner.trainers.architectures import WorldModel
+from CuriousSamplePlanner.trainers.architectures import DynamicsModel
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
 from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
 
@@ -32,8 +32,7 @@ from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
 class EffectPredictionPlanner(ACPlanner):
 	def __init__(self, *args):
 		super(EffectPredictionPlanner, self).__init__(*args)
-
-		self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))
+		self.worldModel = opt_cuda(DynamicsModel(config_size=self.environment.config_size, action_size = self.environment.action_space_size))
 		self.criterion = nn.MSELoss()
 		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
 
@@ -47,10 +46,9 @@ class EffectPredictionPlanner(ACPlanner):
 
 	def update_novelty_scores(self):
 		if(len(self.graph)>0 and self.experiment_dict["node_sampling"] == "softmax"):
-			for _, (inputs, labels, prestates, node_key, index) in enumerate(DataLoader(self.graph, batch_size=self.batch_size, shuffle=True, num_workers=0)):
+			for _, (inputs, labels, prestates, node_key, index, actions) in enumerate(DataLoader(self.graph, batch_size=self.batch_size, shuffle=True, num_workers=0)):
 				# TODO: Turn this into a data provider
-				outputs = opt_cuda(self.worldModel(opt_cuda(labels)).type(torch.FloatTensor))
-				#target_outputs = opt_cuda(self.worldModelTarget(opt_cuda(labels)).type(torch.FloatTensor))
+				outputs = opt_cuda(self.worldModel(opt_cuda(prestates, actions)).type(torch.FloatTensor))
 				target_outputs = opt_cuda(labels)
 				losses = []
 				states = []
@@ -65,7 +63,7 @@ class EffectPredictionPlanner(ACPlanner):
 				_, batch = next_loaded
 				inputs, labels, prestates, acts, acts_log_probs, values, feasible, _, index = batch
 				self.optimizer_world.zero_grad()
-				outputs = self.worldModel(prestates)
+				outputs = self.worldModel(prestates, acts)
 				loss = torch.mean((outputs[:, self.environment.predict_mask] - labels[:, self.environment.predict_mask]) ** 2, dim=1).reshape(-1, 1)
 				Lw = loss.mean()
 				Lw.backward()
@@ -88,8 +86,8 @@ class EffectPredictionPlanner(ACPlanner):
 		whole_feasibles = []
 		for _, batch in enumerate(
 				DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
-			inputs, labels, prestates, acts, _, _, feasible, _, index = batch
-			outputs = self.worldModel(prestates)
+			inputs, labels, prestates, actions, _, _, feasible, _, index = batch
+			outputs = self.worldModel(prestates, actions)
 			losses = []
 			for i in range(self.batch_size):
 				losses.append(torch.unsqueeze(

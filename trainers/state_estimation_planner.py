@@ -42,7 +42,7 @@ class StateEstimationPlanner(ACPlanner):
 
 	def update_novelty_scores(self):
 		if(len(self.graph)>0 and self.experiment_dict["node_sampling"] == "softmax"):
-			for _, (inputs, labels, prestates, node_key, index) in enumerate(DataLoader(self.graph, batch_size=self.batch_size, shuffle=True, num_workers=0)):
+			for _, (inputs, labels, prestates, node_key, index, _) in enumerate(DataLoader(self.graph, batch_size=self.batch_size, shuffle=True, num_workers=0)):
 				# TODO: Turn this into a data provider
 				outputs = opt_cuda(self.worldModel(opt_cuda(inputs)).type(torch.FloatTensor))
 				target_outputs = opt_cuda(labels)

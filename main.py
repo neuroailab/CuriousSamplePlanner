@@ -31,7 +31,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     experiment_dict = {
         # Hyps
         "task": "FiveBlocks",
-        "learning_rate": 5e-4,  
+        "learning_rate": 5e-5,  
         "sample_cap": 1e7, 
         "batch_size": 128,
         "node_sampling": "softmax",
@@ -44,6 +44,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "enable_asm": False, 
         "growth_factor": 10,
         "detailed_gmp": False, 
+        "adaptive_batch": True,
         "num_training_epochs": 30, 
         # Stats
         "world_model_losses": [],
@@ -52,22 +53,19 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "num_graph_nodes": 0,
     }
 
-    lt_dict = {
-        "StateEstimationPlanner": 0.003,
-        "RandomStateEmbeddingPlanner": 0.0003,
-        "EffectPredictionPlanner": 0.001,
-        "RandomSearchPlanner": 0
-    }
-
-
-    experiment_dict["loss_threshold"] = lt_dict[experiment_dict["mode"]]
     experiment_dict['exp_path'] = "./solution_data/" + experiment_dict["exp_id"]
     experiment_dict['load_path'] = "./solution_data/" + experiment_dict["load_id"]
     if (not os.path.isdir("./solution_data")):
         os.mkdir("./solution_data")
     #experiment_dict['exp_path'] = "example_images/" + experiment_dict["exp_id"]
     #experiment_dict['load_path'] = 'example_images/' + experiment_dict["load_id"]
-
+    adaptive_batch_lr = {
+        "StateEstimationPlanner": 0.003,
+        "RandomStateEmbeddingPlanner": 0.0003,
+        "EffectPredictionPlanner": 0.001,
+        "RandomSearchPlanner": 0 
+    }
+    experiment_dict["loss_threshold"] = adaptive_batch_lr[experiment_dict["mode"]]
     PC = getattr(sys.modules[__name__], experiment_dict['mode'])
     planner = PC(experiment_dict)
     

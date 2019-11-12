@@ -49,7 +49,7 @@ class GraphNode():
 		return False
 
 	def get_batch_data(self):
-		return self.config, self.preconfig
+		return self.config, self.preconfig, self.action
 
 class PlanGraph(Dataset):
 	def __init__(self, environment=None, plan_graph_path=None, node_sampling="uniform"):
@@ -86,11 +86,11 @@ class PlanGraph(Dataset):
 
 	def __getitem__(self, index):
 		node = list(self.plan_graph.keys())[index+1]
-		config, preconfig = node.get_batch_data()
+		config, preconfig, action = node.get_batch_data()
 		self.environment.set_state(config)
 		p.stepSimulation()
 		img_arr = torch.cat([opt_cuda(torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0 ,1)) for yaw, pit in self.environment.perspectives])
-		return img_arr, config, preconfig, node.node_key, index
+		return img_arr, config, preconfig, node.node_key, index, action
 
 
 	def set_novelty_scores(self, index, losses):

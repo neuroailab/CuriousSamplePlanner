@@ -45,7 +45,7 @@ class SkinnyWorldModel(nn.Module):
 	def __init__(self, config_size=9):
 		super(SkinnyWorldModel, self).__init__()
 		hidden = 128
-		self.mlp = nn.Sequential(nn.Linear(config_size, hidden))
+		self.mlp = nn.Sequential(nn.Linear(config_size, config_size))
 
 	def forward(self, config):
 		l = self.mlp(config)
@@ -59,5 +59,17 @@ class WorldModel(nn.Module):
 
 	def forward(self, config):
 		l = self.mlp(config)
+		return l
+
+
+class DynamicsModel(nn.Module):
+	def __init__(self, config_size=0, action_size=0):
+		super(DynamicsModel, self).__init__()
+		hidden = 128
+		self.mlp = nn.Sequential(nn.Linear(config_size+action_size, hidden), nn.ReLU(), nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, config_size))
+
+	def forward(self, config, action):
+		state_action = torch.cat([config, action], dim=1)
+		l = self.mlp(state_action)
 		return l
 

@@ -53,7 +53,7 @@ class FiveBlocks(Environment):
 		self.perspectives = [(0, -90)]
 
 		# In this environment, if it times out, we know an object fell off the screen
-		self.break_on_timeout = False
+		self.break_on_timeout = True
 
 		# Set up macro-actions
 		self.macroaction = MacroAction([

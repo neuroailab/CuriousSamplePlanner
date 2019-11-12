@@ -50,7 +50,6 @@ class PulleySeesaw(Environment):
 		stable =  dist(old_conf, conf)<6e-5 
 		return stable, timeout
 
-
 	def __init__(self, *args):
 		super(PulleySeesaw, self).__init__(*args)  
 		# connect(use_gui=not torch.cuda.is_available())
@@ -60,6 +59,7 @@ class PulleySeesaw(Environment):
 			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
 		else:
 			self.robot = None
+
 		self.KNOT = 0.1
 		self.NOKNOT = 0
 		self.break_on_timeout = True
@@ -69,7 +69,6 @@ class PulleySeesaw(Environment):
 		x_scene_offset = 0.9
 		num_small_blue=5
 
-
 		self.training=False
 		self.perspectives = [(0, -90)]
 
@@ -78,7 +77,6 @@ class PulleySeesaw(Environment):
 			set_pose(pid, Pose(Point(x = x_scene_offset-0.19, y = -0.15, z=1.5), Euler(roll=math.pi/2.0, pitch=0, yaw=1.9)))
 
 		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
-
 
 		self.seesaw = p.loadURDF("models/seesaw.urdf", useFixedBase=True)
 		self.seesaw_joint = 1

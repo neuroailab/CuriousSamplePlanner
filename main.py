@@ -37,7 +37,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "node_sampling": "softmax",
         "mode": "RandomStateEmbeddingPlanner",
         "feasible_training": True,
-        "nsamples_per_update": 1024,
+        "nsamples_per_update": 128,
         "training": True, 
         "exp_id": exp_id,
         "load_id": load_id,

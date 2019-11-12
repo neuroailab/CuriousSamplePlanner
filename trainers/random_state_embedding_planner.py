@@ -34,7 +34,7 @@ class RandomStateEmbeddingPlanner(ACPlanner):
 	def __init__(self, *args):
 		super(RandomStateEmbeddingPlanner, self).__init__(*args)
 		self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))
-		self.transform = list(range(self.environment.config_size))
+		self.transform = list(range(self.environment.predict_mask))
 		random.shuffle(self.transform)
 		self.criterion = nn.MSELoss()
 		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
@@ -50,7 +50,7 @@ class RandomStateEmbeddingPlanner(ACPlanner):
 				losses = []
 				states = []
 				for node in range(outputs.shape[0]):
-					losses.append(torch.unsqueeze(self.criterion(outputs[node, self.environment.predict_mask], targets[node, self.environment.predict_mask]), dim=0))
+					losses.append(torch.unsqueeze(self.criterion(outputs[node, self.environment.predict_mask], targets[node, :]), dim=0))
 					states.append(labels[node, self.environment.predict_mask])
 				self.graph.set_novelty_scores(index, losses)
 				
@@ -69,7 +69,7 @@ class RandomStateEmbeddingPlanner(ACPlanner):
 				self.optimizer_world.zero_grad()
 				outputs = self.worldModel(labels)
 				targets = labels[:, self.transform]
-				loss = torch.mean((outputs[:, self.environment.predict_mask] - targets[:, self.environment.predict_mask]) ** 2, dim=1).reshape(-1, 1)
+				loss = torch.mean((outputs[:, self.environment.predict_mask] - targets[:, :]) ** 2, dim=1).reshape(-1, 1)
 				Lw = loss.mean()
 				Lw.backward()
 				self.optimizer_world.step()
@@ -98,7 +98,7 @@ class RandomStateEmbeddingPlanner(ACPlanner):
 			losses = []
 			for i in range(self.batch_size):
 				losses.append(torch.unsqueeze(
-					self.criterion(outputs[i, self.environment.predict_mask], targets[i, self.environment.predict_mask]),
+					self.criterion(outputs[i, self.environment.predict_mask], targets[i,:]),
 					dim=0))
 				whole_feasibles.append(feasible[i].item())
 

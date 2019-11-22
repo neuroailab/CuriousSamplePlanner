@@ -11,39 +11,39 @@ import os
 import shutil
 import h5py
 import imageio
-from CuriousSamplePlanner.planning_pybullet.pybullet_tools.kuka_primitives import BodyPose, BodyConf, Command, get_grasp_gen, \
+from planning_pybullet.pybullet_tools.kuka_primitives import BodyPose, BodyConf, Command, get_grasp_gen, \
     get_ik_fn, get_free_motion_gen, get_holding_motion_gen
-from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
+from planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
     Pose, Point, Euler, set_default_camera, stable_z, \
     BLOCK_URDF, load_model, wait_for_user, disconnect, DRAKE_IIWA_URDF, user_input, update_state, disable_real_time,inverse_kinematics,end_effector_from_body,approach_from_grasp, get_joints, get_joint_positions
-from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import get_pose, set_pose, get_movable_joints, \
+from planning_pybullet.pybullet_tools.utils import get_pose, set_pose, get_movable_joints, \
     set_joint_positions, add_fixed_constraint, add_fixed_constraint_2, enable_real_time, disable_real_time, joint_controller, \
     enable_gravity, get_refine_fn, user_input, wait_for_duration, link_from_name, get_body_name, sample_placement, \
     end_effector_from_body, approach_from_grasp, plan_joint_motion, GraspInfo, Pose, INF, Point, \
     inverse_kinematics, pairwise_collision, remove_fixed_constraint, Attachment, get_sample_fn, \
     step_simulation, refine_path, plan_direct_joint_motion, get_joint_positions, dump_world, get_link_pose,control_joints
-from CuriousSamplePlanner.planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach
+from planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach
 import pickle
 import torch
 from torch import nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import collections
-from motion_planners.discrete import astar
+from planning_pybullet.motion.motion_planners.discrete import astar
 import sys
-from CuriousSamplePlanner.tasks.state import State
-from CuriousSamplePlanner.scripts.utils import *
+from tasks.state import State
+from scripts.utils import *
 from gym import spaces
-from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
+from rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 
 
-class Environment():
+class Environment:
     def __init__(self, experiment_dict):
         self.nsamples_per_update = experiment_dict['nsamples_per_update']
         self.asm_enabled = experiment_dict['enable_asm']
         self.detailed_gmp = experiment_dict['detailed_gmp']
         self.training = experiment_dict['training']
-        if(experiment_dict['mode'] == "EffectPredictionPlanner" or experiment_dict['mode'] == "RandomStateEmbeddingPlanner"):
+        if experiment_dict['mode'] == "EffectPredictionPlanner" or experiment_dict['mode'] == "RandomStateEmbeddingPlanner":
             self.image_based = False
         else:
             self.image_based = True
@@ -54,7 +54,7 @@ class Environment():
         self.state = State(len(self.objects), len(self.static_objects),len(self.macroaction.link_status))
         self.action_space_size = self.macroaction.action_space_size
         self.config_size =  self.state.config_size
-        if(not linking):
+        if not linking:
             self.predict_mask = self.state.positions
         else:
             self.predict_mask = self.state.positions+self.state.links
@@ -67,7 +67,7 @@ class Environment():
         # Get the macroaction that is being executed
         action = action[0].detach().cpu().numpy()
         config = self.get_current_config()
-        if(self.asm_enabled):
+        if self.asm_enabled:
             with torch.no_grad():
                 obs =  opt_cuda(torch.tensor(self.get_current_config()).type(torch.FloatTensor))
                 value, policy_action, action_log_prob, recurrent_hidden_states = self.actor_critic.act(torch.unsqueeze(obs,0), opt_cuda(torch.tensor([])), 1)
@@ -75,27 +75,27 @@ class Environment():
                 policy_action = m(policy_action)
                 action = policy_action[0].detach().cpu().numpy()
             feasible, command =  self.macroaction.execute(action, config)
-            return (action, action_log_prob, value,  int(feasible), command)
+            return action, action_log_prob, value, int(feasible), command
         else:
             feasible, command =  self.macroaction.execute(action, config)
-            return (action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), int(feasible), command)
+            return action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), int(feasible), command
 
 
     def remove_constraints(self):
-        if(len(self.macroaction.link_status)>0):
+        if len(self.macroaction.link_status)>0:
             for obj1_index in range(len(self.objects)):
                 for obj2_index in range(obj1_index, len(self.objects)):
                     link_index = obj1_index*len(self.objects)+obj2_index
-                    if(self.macroaction.links[link_index] is not None):
+                    if self.macroaction.links[link_index] is not None:
                         p.removeConstraint(self.macroaction.links[link_index])
                         self.macroaction.links[link_index] = None
 
     def add_constraints(self, conf):
-        if(len(self.macroaction.link_status)>0):
+        if len(self.macroaction.link_status)>0:
             for obj1_index in range(len(self.objects)):
                 for obj2_index in range(obj1_index, len(self.objects)):
                     link_index = obj1_index*len(self.objects)+obj2_index
-                    if(conf[self.state.links[link_index]]==1):
+                    if conf[self.state.links[link_index]]==1:
                         self.macroaction.links[link_index] = add_fixed_constraint_2(self.objects[obj1_index], self.objects[obj2_index])
             # Update link status
             self.macroaction.link_status = list(conf[-len(self.macroaction.link_status):len(conf)])
@@ -119,15 +119,15 @@ class Environment():
         time_limit = 1000
         config = self.get_current_config()
         t = 0
-        while (True):
+        while True:
             for _ in range(5):
                 p.stepSimulation(physicsClientId=0)
             time.sleep(dt)
             config_t = self.get_current_config()
-            if (dist(config_t, config) < 3e-5 or t>time_limit):
+            if dist(config_t, config) < 3e-5 or t>time_limit:
                 break
 
-            if(hook is not None):
+            if hook is not None:
                 hook()
             # config_t = self.set_legal_config(config_t)
             config = config_t
@@ -145,7 +145,7 @@ class Environment():
             0.5:(0.32,0.67),
             0.6:(0.32,0.59)
         }
-        if(z == None):
+        if z == None:
             z = random.choice([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
 
         radius = random.uniform(reachability[int(z*10)/10.0][0], reachability[int(z*10)/10.0][1])
@@ -153,7 +153,7 @@ class Environment():
         return [math.sin(angle) * radius, math.cos(angle) * radius, z]
 
     def is_stable(self, old_conf, conf, count):
-        return (dist(old_conf, conf)<5e-4, count>500)
+        return dist(old_conf, conf) < 5e-4, count > 500
 
     def collect_samples(self, graph):
         features = []
@@ -186,17 +186,17 @@ class Environment():
             p.stepSimulation(physicsClientId=0)
 
             count = 0
-            while (True):
+            while True:
                 for _ in range(10):
                     p.stepSimulation(physicsClientId=0)
                     time.sleep(0.00001)
 
                 config_t = self.get_current_config()
                 stable, timeout = self.is_stable(config_t, config, count)
-                if(stable or (timeout and self.break_on_timeout)):
+                if stable or (timeout and self.break_on_timeout):
                     break
 
-                if(timeout and not self.break_on_timeout):
+                if timeout and not self.break_on_timeout:
                     print("Timeout Reset")
                     while True:
                         parent = graph.expand_node(1)[0]
@@ -215,7 +215,7 @@ class Environment():
 
                 
             # Capture perspectives
-            if(self.image_based):
+            if self.image_based:
                 img_arr = torch.unsqueeze(torch.cat(
                     [torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0, 1)
                      for yaw, pit in self.perspectives]), dim=0)
@@ -232,7 +232,7 @@ class Environment():
             states[i, :] = torch.tensor(config)
             prestates[i, :] = torch.tensor(preconfig)
 
-            if(self.check_goal_state(config)):
+            if self.check_goal_state(config):
                 goal_config = config
                 goal_parent = parent.node_key
                 goal_action = action
@@ -253,7 +253,7 @@ class Environment():
         self.run_until_stable(dt=0)
         time.sleep(0.01)
         post_stable_state = self.get_current_config()
-        if(self.check_goal_state(post_stable_state)):
+        if self.check_goal_state(post_stable_state):
             reward = 1.0
             done = True
 

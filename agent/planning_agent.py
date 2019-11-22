@@ -7,6 +7,7 @@ import time
 import random
 import math
 import imageio
+import os.path as osp
 import matplotlib.pyplot as plt
 import os
 import shutil
@@ -61,8 +62,9 @@ class Link(ApplyForce):
 
 class PlanningAgent:
 
-    def __init__(self, environment):
+    def __init__(self, environment, out):
         self.environment = environment
+        self.out_path = out
         self.links = []
         if self.environment.robot != None:
             self.robot = self.environment.robot
@@ -80,17 +82,22 @@ class PlanningAgent:
                 commands.append(plan[i].command)
                 self.execute(plan[i].command)
             else:
+                for perspective in self.environment.perspectives:
+                    imageio.imwrite(osp.join(self.out_path, '{}.jpg'.format(i)),
+                                    take_picture(perspective[0], perspective[1], 0, size=512))
+
                 macroaction = self.environment.macroaction
                 macroaction.add_arm(self.robot)
                 macroaction.gmp = True
                 macroaction.teleport = False
-                command, aux = macroaction.execute(config = self.environment.get_current_config(), embedding = plan[i].action, sim=True)
-                if aux != None:
-                    self.links.append(aux)
+                # command, aux = macroaction.execute(config = self.environment.get_current_config(), embedding = plan[i].action, sim=True)
+                feasible, command = macroaction.execute(config=self.environment.get_current_config(), embedding=plan[i].action, sim=True)
+                # if aux != None:
+                #     self.links.append(aux)
                 # Restore the state
                 if command is not None:
                     self.execute(command)
-                    self.environment.run_until_stable(hook = self.hook, dt=0.01)
+                    self.environment.run_until_stable(hook=self.hook, dt=0.01)
                 commands.append(command)
 
         # # Remove all the links

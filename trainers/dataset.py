@@ -1,26 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import pybullet as p
-import numpy as np
-import time
-import random
-import math
-import imageio
-import matplotlib.pyplot as plt
-import os
-import shutil
-import h5py
-import imageio
-import pickle
-import collections
-from planning_pybullet.motion.motion_planners.discrete import astar
-import sys
 
-from scripts.utils import *
 import torch
-from torch import nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 
 class ExperienceReplayBuffer(Dataset):

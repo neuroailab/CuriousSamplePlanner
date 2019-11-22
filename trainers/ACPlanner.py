@@ -1,31 +1,11 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import pybullet as p
-import numpy as np
-import random
-import math
-import imageio
-import matplotlib.pyplot as plt
-import os
-import shutil
-import imageio
-import pickle
-import torch
-from torch import nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-import sys
 
-from tasks.three_block_stack import ThreeBlocks
-from rl_ppo_rnd.a2c_ppo_acktr.model import Policy
-from tasks.ball_ramp import BallRamp
-from tasks.pulley import PulleySeesaw
-from tasks.bookshelf import BookShelf
+from rl_ppo_rnd.a2c_ppo_acktr import algo
 from rl_ppo_rnd.a2c_ppo_acktr.storage import RolloutStorage
-from rl_ppo_rnd.a2c_ppo_acktr import algo, utils
 from scripts.utils import *
-from trainers.planner import Planner
 from trainers.dataset import ExperienceReplayBuffer
+from trainers.planner import Planner
 
 
 class ACPlanner(Planner):
@@ -91,14 +71,14 @@ class ACPlanner(Planner):
                 ntarget = target.cpu().numpy()
                 npretarget = pretarget.cpu().numpy()
                 if not self.graph.is_node(ntarget):
-                    self.environment.set_state(ntarget)
-                    for perspective in self.environment.perspectives:
-                        imageio.imwrite(self.exp_path
-                                        + '/run_index=' + str(run_index)
-                                        + ',index=' + str(en_index)
-                                        + ',parent_index=' + str(int(parent_index.item()))
-                                        + ',node_index=' + str(self.graph.node_key) + '.jpg',
-                                        take_picture(perspective[0], perspective[1], 0, size=512))
+                    # self.environment.set_state(ntarget)
+                    # for perspective in self.environment.perspectives:
+                    #     imageio.imwrite(self.exp_path
+                    #                     + '/run_index=' + str(run_index)
+                    #                     + ',index=' + str(en_index)
+                    #                     + ',parent_index=' + str(int(parent_index.item()))
+                    #                     + ',node_index=' + str(self.graph.node_key) + '.jpg',
+                    #                     take_picture(perspective[0], perspective[1], 0, size=512))
                     self.graph.add_node(ntarget, npretarget, action.cpu().numpy(), torch.squeeze(parent_index).item(),
                                         command=command)
                     added_base_count += 1

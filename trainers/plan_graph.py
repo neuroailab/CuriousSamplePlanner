@@ -1,34 +1,12 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import pybullet as p
-import numpy as np
-import time
-import random
-import math
-import imageio
-import matplotlib.pyplot as plt
-import os
-import shutil
-import h5py
-import imageio
-from planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach
-import pickle
-import collections
-from planning_pybullet.motion.motion_planners.discrete import astar
-import sys
 
-from tasks.three_block_stack import ThreeBlocks
-
-from tasks.ball_ramp import BallRamp
-from tasks.pulley import PulleySeesaw
-from tasks.bookshelf import BookShelf
-from scripts.utils import *
-from numpy.random import choice
 import torch
-from torch import nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
+from numpy.random import choice
 from scipy.special import softmax
+from torch.utils.data import Dataset
+
+from scripts.utils import *
 
 
 class GraphNode:
@@ -53,9 +31,8 @@ class GraphNode:
 
 
 class PlanGraph(Dataset):
-    def __init__(self, environment=None, plan_graph_path=None, node_sampling="uniform"):
+    def __init__(self, plan_graph_path=None, node_sampling="uniform"):
         self.node_key = 0
-        self.environment = environment
         self.selection_strategy = node_sampling
         if plan_graph_path != None:
             self.plan_graph = np.load(plan_graph_path).item()
@@ -88,12 +65,7 @@ class PlanGraph(Dataset):
     def __getitem__(self, index):
         node = list(self.plan_graph.keys())[index + 1]
         config, preconfig, action = node.get_batch_data()
-        self.environment.set_state(config)
-        p.stepSimulation()
-        img_arr = torch.cat(
-            [opt_cuda(torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0, 1)) for yaw, pit in
-             self.environment.perspectives])
-        return img_arr, config, preconfig, node.node_key, index, action
+        return torch.zeros((1, 3, 84, 84)), config, preconfig, node.node_key, index, action
 
     def set_novelty_scores(self, index, losses):
         for loss_index, node_index in enumerate(index):

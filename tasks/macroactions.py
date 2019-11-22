@@ -1,42 +1,14 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import pybullet as p
-import numpy as np
-import time
-import random
-import math
-import imageio
-import matplotlib.pyplot as plt
-import os
-import shutil
-import h5py
-import imageio
+
 from planning_pybullet.pybullet_tools.kuka_primitives import BodyPose, BodyConf, Command, get_grasp_gen, \
     get_ik_fn, get_free_motion_gen, get_holding_motion_gen
-from planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
-    Pose, Point, Euler, set_default_camera, stable_z, \
-    BLOCK_URDF, load_model, wait_for_user, disconnect, DRAKE_IIWA_URDF, user_input, update_state, disable_real_time, \
-    inverse_kinematics, end_effector_from_body, approach_from_grasp, get_joints, get_joint_positions
-
-from planning_pybullet.pybullet_tools.utils import multiply, invert, get_pose, set_pose, get_movable_joints, \
-    set_joint_positions, add_fixed_constraint_2, enable_real_time, disable_real_time, joint_controller, \
-    enable_gravity, get_refine_fn, user_input, wait_for_duration, link_from_name, get_body_name, sample_placement, \
-    end_effector_from_body, approach_from_grasp, plan_joint_motion, GraspInfo, Pose, INF, Point, \
-    inverse_kinematics, pairwise_collision, remove_fixed_constraint, Attachment, get_sample_fn, \
-    step_simulation, refine_path, plan_direct_joint_motion, get_joint_positions, dump_world, get_link_pose, \
-    control_joints
-
-from planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach, ApplyForce
-import pickle
-import torch
-from torch import nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-import collections
-from planning_pybullet.motion.motion_planners.discrete import astar
-import sys
-
-from tasks.environment import Environment
+from planning_pybullet.pybullet_tools.kuka_primitives import Detach, ApplyForce
+from planning_pybullet.pybullet_tools.utils import WorldSaver, Euler
+from planning_pybullet.pybullet_tools.utils import multiply, invert, set_pose, get_movable_joints, \
+    set_joint_positions, add_fixed_constraint_2, end_effector_from_body, approach_from_grasp, Pose, Point, \
+    inverse_kinematics, get_sample_fn, \
+    get_joint_positions
 from scripts.utils import *
 
 

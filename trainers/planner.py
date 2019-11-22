@@ -1,52 +1,9 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import pybullet as p
-import numpy as np
-import time
-import random
-import math
-import imageio
-import matplotlib.pyplot as plt
-import os
-import shutil
-import h5py
-import imageio
-from planning_pybullet.pybullet_tools.kuka_primitives import BodyPose, BodyConf, Command, get_grasp_gen, \
-    get_ik_fn, get_free_motion_gen, get_holding_motion_gen
-from planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
-    Pose, Point, Euler, set_default_camera, stable_z, \
-    BLOCK_URDF, load_model, wait_for_user, disconnect, DRAKE_IIWA_URDF, user_input, update_state, disable_real_time, \
-    inverse_kinematics, end_effector_from_body, approach_from_grasp, get_joints, get_joint_positions
 
-from planning_pybullet.pybullet_tools.utils import get_pose, set_pose, get_movable_joints, \
-    set_joint_positions, add_fixed_constraint, enable_real_time, disable_real_time, joint_controller, \
-    enable_gravity, get_refine_fn, user_input, wait_for_duration, link_from_name, get_body_name, sample_placement, \
-    end_effector_from_body, approach_from_grasp, plan_joint_motion, GraspInfo, Pose, INF, Point, \
-    inverse_kinematics, pairwise_collision, remove_fixed_constraint, Attachment, get_sample_fn, \
-    step_simulation, refine_path, plan_direct_joint_motion, get_joint_positions, dump_world, get_link_pose, \
-    control_joints
-
-from planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach
-import pickle
-import torch
-from torch import nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-import collections
-from planning_pybullet.motion.motion_planners.discrete import astar
-import sys
-
-from tasks.three_block_stack import ThreeBlocks
-
-from tasks.ball_ramp import BallRamp
-from tasks.pulley import PulleySeesaw
-from tasks.bookshelf import BookShelf
-
-from tasks.five_block_stack import FiveBlocks
 from scripts.utils import *
-
-from trainers.plan_graph import PlanGraph
 from trainers.dataset import ExperienceReplayBuffer
+from trainers.plan_graph import PlanGraph
 
 
 class Planner:
@@ -68,12 +25,11 @@ class Planner:
         # Create the replay buffer for training world models
         self.experience_replay = ExperienceReplayBuffer()
 
-        # Create the environment
         EC = getattr(sys.modules[__name__], self.experiment_dict["task"])
         self.environment = EC(experiment_dict)
 
         # Init the plan graph
-        self.graph = PlanGraph(environment=self.environment, node_sampling=self.node_sampling)
+        self.graph = PlanGraph(node_sampling=self.node_sampling)
         super(Planner, self).__init__()
 
     def print_exp_dict(self, verbose=False):
@@ -98,14 +54,14 @@ class Planner:
             values, feasible, parents, goal, goal_prestate, goal_parent, \
             goal_action, goal_command, commands = self.environment.collect_samples(self.graph)
             if goal is not None:
-                self.environment.set_state(goal)
-                for perspective in self.environment.perspectives:
-                    imageio.imwrite(self.exp_path
-                                    + '/GOAL'
-                                    + ',run_index=' + str(run_index)
-                                    + ',parent_index=' + str(goal_parent)
-                                    + ',node_key=' + str(self.graph.node_key) + '.jpg',
-                                    take_picture(perspective[0], perspective[1], 0, size=512))
+                # self.environment.set_state(goal)
+                # for perspective in self.environment.perspectives:
+                #     imageio.imwrite(self.exp_path
+                #                     + '/GOAL'
+                #                     + ',run_index=' + str(run_index)
+                #                     + ',parent_index=' + str(goal_parent)
+                #                     + ',node_key=' + str(self.graph.node_key) + '.jpg',
+                #                     take_picture(perspective[0], perspective[1], 0, size=512))
 
                 goal_node = self.graph.add_node(goal, goal_prestate, goal_action, goal_parent, command=goal_command)
                 plan = self.graph.get_optimal_plan(start_node, goal_node)

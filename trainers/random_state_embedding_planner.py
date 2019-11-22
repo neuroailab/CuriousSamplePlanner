@@ -1,33 +1,9 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import pybullet as p
-import numpy as np
-import random
-import math
-import imageio
-import matplotlib.pyplot as plt
-import os
-import shutil
-import imageio
-import pickle
-import torch
-from torch import nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-import sys
-import random
-
-from tasks.three_block_stack import ThreeBlocks
-
-from tasks.ball_ramp import BallRamp
-from tasks.pulley import PulleySeesaw
-from tasks.bookshelf import BookShelf
 
 from scripts.utils import *
-from trainers.planner import Planner
-from trainers.architectures import WorldModel, SkinnyWorldModel
-from trainers.dataset import ExperienceReplayBuffer
 from trainers.ACPlanner import ACPlanner
+from trainers.architectures import WorldModel
 
 
 class RandomStateEmbeddingPlanner(ACPlanner):

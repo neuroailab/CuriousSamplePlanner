@@ -35,6 +35,7 @@ from tasks.state import State
 from scripts.utils import *
 from gym import spaces
 from rl_ppo_rnd.a2c_ppo_acktr.model import Policy
+from trainers.architectures import DynamicsModel
 
 
 class Environment:
@@ -50,6 +51,7 @@ class Environment:
 
         self.arm_size=1
 
+
     def config_state_attrs(self, linking=False):
         self.state = State(len(self.objects), len(self.static_objects),len(self.macroaction.link_status))
         self.action_space_size = self.macroaction.action_space_size
@@ -61,6 +63,7 @@ class Environment:
 
         self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
         self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
+        self.dynamics = opt_cuda(DynamicsModel(config_size=self.config_size, action_size=self.action_space_size))
 
 
     def take_action(self, action):
@@ -79,6 +82,23 @@ class Environment:
         else:
             feasible, command =  self.macroaction.execute(action, config)
             return action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), int(feasible), command
+
+    def take_sim_action(self, config, action):
+        # Get the macroaction that is being executed
+        action = action[0].detach().cpu().numpy()
+        # config = self.get_current_config()
+        if self.asm_enabled:
+            with torch.no_grad():
+                obs = opt_cuda(torch.tensor(config).type(torch.FloatTensor))
+                value, policy_action, action_log_prob, recurrent_hidden_states = self.actor_critic.act(torch.unsqueeze(obs,0), opt_cuda(torch.tensor([])), 1)
+                m = torch.nn.Tanh()
+                policy_action = m(policy_action)
+                action = policy_action[0].detach().cpu().numpy()
+            # feasible, command =  self.macroaction.execute(action, config)
+            return action, action_log_prob, value, 1, None
+        else:
+            # feasible, command =  self.macroaction.execute(action, config)
+            return action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), 1, None
 
 
     def remove_constraints(self):
@@ -175,52 +195,54 @@ class Environment:
         for i in range(self.nsamples_per_update):
             while True:
                 parent = graph.expand_node(1)[0]
-                self.set_state(parent.config)
+                # self.set_state(parent.config)
                 embedding = torch.unsqueeze(torch.tensor(np.random.uniform(low=-1, high=1, size=self.action_space_size)),0)
-                (action, action_log_prob, value, feasible, command) = self.take_action(embedding)
+                # (action, action_log_prob, value, feasible, command) = self.take_action(embedding)
+                (action, action_log_prob, value, feasible, command) = self.take_sim_action(embedding)
                 if action is not None:
                     break
 
-            config = self.get_current_config()
-            preconfig = config
-            p.stepSimulation(physicsClientId=0)
+            # config = self.get_current_config()
+            preconfig = parent.config
+            config = self.dynamics.forward(preconfig, action)
 
-            count = 0
-            while True:
-                for _ in range(10):
-                    p.stepSimulation(physicsClientId=0)
-                    time.sleep(0.00001)
-
-                config_t = self.get_current_config()
-                stable, timeout = self.is_stable(config_t, config, count)
-                if stable or (timeout and self.break_on_timeout):
-                    break
-
-                if timeout and not self.break_on_timeout:
-                    print("Timeout Reset")
-                    while True:
-                        parent = graph.expand_node(1)[0]
-                        self.set_state(parent.config)
-                        embedding = torch.unsqueeze(torch.tensor(np.random.uniform(low=-1, high=1, size=self.action_space_size)),0)
-                        (action, action_log_prob, value, feasible, command) = self.take_action(embedding)
-                        if action is not None:
-                            break
-
-                    config = self.get_current_config()
-                    count = 0
-
-                #config_t = self.set_legal_config(config_t)
-                config = config_t
-                count+=1
+            # count = 0
+            # while True:
+            #     for _ in range(10):
+            #         p.stepSimulation(physicsClientId=0)
+            #         time.sleep(0.00001)
+            #
+            #     config_t = self.get_current_config()
+            #     stable, timeout = self.is_stable(config_t, config, count)
+            #     if stable or (timeout and self.break_on_timeout):
+            #         break
+            #
+            #     if timeout and not self.break_on_timeout:
+            #         print("Timeout Reset")
+            #         while True:
+            #             parent = graph.expand_node(1)[0]
+            #             self.set_state(parent.config)
+            #             embedding = torch.unsqueeze(torch.tensor(np.random.uniform(low=-1, high=1, size=self.action_space_size)),0)
+            #             (action, action_log_prob, value, feasible, command) = self.take_action(embedding)
+            #             if action is not None:
+            #                 break
+            #
+            #         config = self.get_current_config()
+            #         count = 0
+            #
+            #     #config_t = self.set_legal_config(config_t)
+            #     config = config_t
+            #     count+=1
 
                 
-            # Capture perspectives
-            if self.image_based:
-                img_arr = torch.unsqueeze(torch.cat(
-                    [torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0, 1)
-                     for yaw, pit in self.perspectives]), dim=0)
-            else:
-                img_arr = torch.zeros((1, 3, 84, 84))
+            # # Capture perspectives
+            # if self.image_based:
+            #     img_arr = torch.unsqueeze(torch.cat(
+            #         [torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0, 1)
+            #          for yaw, pit in self.perspectives]), dim=0)
+            # else:
+            #     img_arr = torch.zeros((1, 3, 84, 84))
+            img_arr = torch.zeros((1, 3, 84, 84))
 
             features.append(img_arr)
             commands.append(command)

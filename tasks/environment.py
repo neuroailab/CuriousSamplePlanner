@@ -198,7 +198,7 @@ class Environment:
                 # self.set_state(parent.config)
                 embedding = torch.unsqueeze(torch.tensor(np.random.uniform(low=-1, high=1, size=self.action_space_size)),0)
                 # (action, action_log_prob, value, feasible, command) = self.take_action(embedding)
-                (action, action_log_prob, value, feasible, command) = self.take_sim_action(embedding)
+                (action, action_log_prob, value, feasible, command) = self.take_sim_action(parent.config, embedding)
                 if action is not None:
                     break
 

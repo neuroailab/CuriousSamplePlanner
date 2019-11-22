@@ -85,7 +85,7 @@ class Environment:
 
     def take_sim_action(self, config, action):
         # Get the macroaction that is being executed
-        action = action[0].detach().cpu().numpy()
+        # action = action[0].detach().cpu().numpy()
         # config = self.get_current_config()
         if self.asm_enabled:
             with torch.no_grad():
@@ -93,7 +93,7 @@ class Environment:
                 value, policy_action, action_log_prob, recurrent_hidden_states = self.actor_critic.act(torch.unsqueeze(obs,0), opt_cuda(torch.tensor([])), 1)
                 m = torch.nn.Tanh()
                 policy_action = m(policy_action)
-                action = policy_action[0].detach().cpu().numpy()
+                # action = policy_action[0].detach().cpu().numpy()
             # feasible, command =  self.macroaction.execute(action, config)
             return action, action_log_prob, value, 1, None
         else:
@@ -204,7 +204,8 @@ class Environment:
 
             # config = self.get_current_config()
             preconfig = parent.config
-            config = self.dynamics.forward(opt_cuda(torch.tensor(preconfig).type(torch.FloatTensor)), action)
+            config = self.dynamics.forward(opt_cuda(torch.tensor(preconfig).type(torch.FloatTensor)), opt_cuda(action))
+            action = action[0].detach().cpu().numpy()
 
             # count = 0
             # while True:

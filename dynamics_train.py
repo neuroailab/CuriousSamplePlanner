@@ -228,7 +228,7 @@ def main(args):
     env_name = 'ThreeBlocks'
     env = ThreeBlocks(experiment_dict)
 
-    env = envs.Logger(env, interval=args.ppo_steps)
+    env = envs.Logger(env, interval=args.update_steps)
     # env = envs.Normalizer(env, states=True, rewards=True)
     env = envs.Torch(env)
     if args.record:
@@ -236,7 +236,7 @@ def main(args):
     env = envs.Runner(env)
     env.seed(args.seed)
 
-    writer = SummaryWriter(log_dir='out/tensorboard/{}'.format(env_name))
+    writer = SummaryWriter(log_dir='out/tensorboard/{}'.format(env_name)) if args.tb else None
 
     dynamics = DynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
     curiosity = RNDCuriosityModel(env)

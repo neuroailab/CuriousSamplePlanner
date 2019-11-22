@@ -66,7 +66,7 @@ class Environment:
         self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
         self.dynamics = opt_cuda(DynamicsModel(config_size=self.config_size, action_size=self.action_space_size))
         # dynamics.load_state_dict(torch.load(self.dynamics_path, map_location='cpu'))
-        if len(self.dynamics_path) != '':
+        if self.dynamics_path != '':
             self.dynamics.load_state_dict(
                 torch.load(self.dynamics_path, map_location='cpu' if not torch.cuda.is_available() else "cuda:0"))
 

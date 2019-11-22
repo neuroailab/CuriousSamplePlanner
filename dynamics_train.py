@@ -265,7 +265,7 @@ def main(args):
         # replay = env.run(get_action, steps=args.update_steps, render=args.render)
         replay = env.run(get_action, steps=args.update_steps, render=False)
         # dynamics_dataset += replay
-        dynamics_dataset = opt_cuda(replay)
+        dynamics_dataset = replay
         if len(dynamics_dataset) > int(1e6):
             dynamics_dataset = dynamics_dataset[-int(1e6):]
 

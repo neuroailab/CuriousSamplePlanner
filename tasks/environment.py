@@ -74,7 +74,8 @@ class Environment:
 
     def take_action(self, action):
         # Get the macroaction that is being executed
-        action = action[0].detach().cpu().numpy()
+        if not isinstance(action, np.ndarray):
+            action = action[0].detach().cpu().numpy()
         config = self.get_current_config()
         if self.asm_enabled:
             with torch.no_grad():

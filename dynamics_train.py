@@ -121,7 +121,7 @@ def vanilla_mpc(state, action_space, dynamics, curiosity):
     num_samples = 1000
     horizon = 10
     distro = Uniform(low=-1., high=1.)
-    random_plans = distro.sample(th.Size([num_samples, horizon, action_dim]))
+    random_plans = opt_cuda(distro.sample(th.Size([num_samples, horizon, action_dim])))
     plan_scores = opt_cuda(th.zeros((num_samples,)))
     state_repeat = state.repeat(num_samples, 1)
     with th.no_grad():
@@ -148,7 +148,7 @@ def cross_entropy_method(state, action_space, dynamics, curiosity):
         for m in range(num_iters):
             action_distro = MultivariateNormal(means, th.diag_embed(covars, offset=0))
             state_repeat = state.repeat(num_samples, 1)
-            random_plans = action_distro.sample(th.Size([num_samples]))
+            random_plans = opt_cuda(action_distro.sample(th.Size([num_samples])))
             random_plans = th.clamp(random_plans, -1., 1.)
             plan_scores = opt_cuda(th.zeros((num_samples,)))
 
@@ -180,7 +180,7 @@ def model_predictive_path_integral(state, action_space, dynamics, curiosity):
     with th.no_grad():
         for m in range(num_iters):
             state_repeat = state.repeat(num_samples, 1)
-            base_random_plans = action_distro.sample(th.Size([num_samples]))
+            base_random_plans = opt_cuda(action_distro.sample(th.Size([num_samples])))
             base_random_plans = th.clamp(base_random_plans, -1., 1.)
             plan_scores = opt_cuda(th.zeros((num_samples,)))
 

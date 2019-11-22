@@ -17,93 +17,97 @@ from torch.utils.data import Dataset, DataLoader
 import sys
 import random
 
-from CuriousSamplePlanner.tasks.three_block_stack import ThreeBlocks
+from tasks.three_block_stack import ThreeBlocks
 
-from CuriousSamplePlanner.tasks.ball_ramp import BallRamp
-from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
-from CuriousSamplePlanner.tasks.bookshelf import BookShelf
+from tasks.ball_ramp import BallRamp
+from tasks.pulley import PulleySeesaw
+from tasks.bookshelf import BookShelf
 
-from CuriousSamplePlanner.scripts.utils import *
-from CuriousSamplePlanner.trainers.planner import Planner
-from CuriousSamplePlanner.trainers.architectures import WorldModel, SkinnyWorldModel
-from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
-from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
+from scripts.utils import *
+from trainers.planner import Planner
+from trainers.architectures import WorldModel, SkinnyWorldModel
+from trainers.dataset import ExperienceReplayBuffer
+from trainers.ACPlanner import ACPlanner
 
 
 class RandomStateEmbeddingPlanner(ACPlanner):
-	def __init__(self, *args):
-		super(RandomStateEmbeddingPlanner, self).__init__(*args)
-		self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))
-		self.transform = list(self.environment.predict_mask)
-		random.shuffle(self.transform)
-		self.criterion = nn.MSELoss()
-		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
+    def __init__(self, *args):
+        super(RandomStateEmbeddingPlanner, self).__init__(*args)
+        self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))
+        self.transform = list(self.environment.predict_mask)
+        random.shuffle(self.transform)
+        self.criterion = nn.MSELoss()
+        self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
 
+    def update_novelty_scores(self):
+        if len(self.graph) > 0 and self.experiment_dict["node_sampling"] == "softmax":
+            for _, (inputs, labels, prestates, node_key, index, _) in enumerate(
+                    DataLoader(self.graph, batch_size=self.batch_size, shuffle=True, num_workers=0)):
+                # TODO: Turn this into a data provider
+                outputs = opt_cuda(self.worldModel(opt_cuda(labels)).type(torch.FloatTensor))
+                targets = opt_cuda(labels.type(torch.FloatTensor))[:, self.transform]
+                # target_outputs = opt_cuda(self.worldModelTarget(opt_cuda(labels)).type(torch.FloatTensor))
+                losses = []
+                states = []
+                for node in range(outputs.shape[0]):
+                    losses.append(
+                        torch.unsqueeze(self.criterion(outputs[node, self.environment.predict_mask], targets[node, :]),
+                                        dim=0))
+                    states.append(labels[node, self.environment.predict_mask])
+                self.graph.set_novelty_scores(index, losses)
 
-	def update_novelty_scores(self):
-		if(len(self.graph)>0 and self.experiment_dict["node_sampling"] == "softmax"):
-			for _, (inputs, labels, prestates, node_key, index, _) in enumerate(DataLoader(self.graph, batch_size=self.batch_size, shuffle=True, num_workers=0)):
-				# TODO: Turn this into a data provider
-				outputs = opt_cuda(self.worldModel(opt_cuda(labels)).type(torch.FloatTensor))
-				targets = opt_cuda(labels.type(torch.FloatTensor))[:, self.transform]
-				#target_outputs = opt_cuda(self.worldModelTarget(opt_cuda(labels)).type(torch.FloatTensor))
-				losses = []
-				states = []
-				for node in range(outputs.shape[0]):
-					losses.append(torch.unsqueeze(self.criterion(outputs[node, self.environment.predict_mask], targets[node, :]), dim=0))
-					states.append(labels[node, self.environment.predict_mask])
-				self.graph.set_novelty_scores(index, losses)
-				
-	def save_params(self):
-		# Save the updated models
-		with open(self.exp_path + "/worldModel.pkl", 'wb') as fw:
-			pickle.dump(self.worldModel, fw)
-		with open(self.exp_path + "/actor_critic.pkl", "wb") as fa:
-			pickle.dump(self.environment.actor_critic, fa)
+    def save_params(self):
+        # Save the updated models
+        with open(self.exp_path + "/worldModel.pkl", 'wb') as fw:
+            pickle.dump(self.worldModel, fw)
+        with open(self.exp_path + "/actor_critic.pkl", "wb") as fa:
+            pickle.dump(self.environment.actor_critic, fa)
 
-	def train_world_model(self, run_index):
-		for epoch in range(self.num_training_epochs):
-			for next_loaded in enumerate(DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
-				_, batch = next_loaded
-				inputs, labels, prestates, acts, acts_log_probs, values, feasible, _, index = batch
-				self.optimizer_world.zero_grad()
-				outputs = self.worldModel(labels)
-				targets = labels[:, self.transform]
-				loss = torch.mean((outputs[:, self.environment.predict_mask] - targets[:, :]) ** 2, dim=1).reshape(-1, 1)
-				Lw = loss.mean()
-				Lw.backward()
-				self.optimizer_world.step()
-				loss = loss.detach()
-				if(self.experiment_dict["enable_asm"] and epoch==0):
-					if(self.experiment_dict["feasible_training"]):
-						loss = loss*feasible-(1-feasible)
-					done = [False]
-					infos = [{}]
-					recurrent_hidden_states = opt_cuda(torch.tensor([]))
-					masks = torch.FloatTensor([[0.0] if done_ else [1.0] for done_ in done])
-					bad_masks = torch.FloatTensor([[1.0] for info in infos])
-					for index in range(labels.shape[0]):
-						self.rollouts.insert(labels[index, :], recurrent_hidden_states, torch.unsqueeze(acts[index, :], 0), torch.unsqueeze(acts_log_probs[index, :], 0), values[index, :], loss[index, :], masks, bad_masks)
+    def train_world_model(self, run_index):
+        for epoch in range(self.num_training_epochs):
+            for next_loaded in enumerate(
+                    DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
+                _, batch = next_loaded
+                inputs, labels, prestates, acts, acts_log_probs, values, feasible, _, index = batch
+                self.optimizer_world.zero_grad()
+                outputs = self.worldModel(labels)
+                targets = labels[:, self.transform]
+                loss = torch.mean((outputs[:, self.environment.predict_mask] - targets[:, :]) ** 2, dim=1).reshape(-1,
+                                                                                                                   1)
+                Lw = loss.mean()
+                Lw.backward()
+                self.optimizer_world.step()
+                loss = loss.detach()
+                if self.experiment_dict["enable_asm"] and epoch == 0:
+                    if self.experiment_dict["feasible_training"]:
+                        loss = loss * feasible - (1 - feasible)
+                    done = [False]
+                    infos = [{}]
+                    recurrent_hidden_states = opt_cuda(torch.tensor([]))
+                    masks = torch.FloatTensor([[0.0] if done_ else [1.0] for done_ in done])
+                    bad_masks = torch.FloatTensor([[1.0] for info in infos])
+                    for index in range(labels.shape[0]):
+                        self.rollouts.insert(labels[index, :], recurrent_hidden_states,
+                                             torch.unsqueeze(acts[index, :], 0),
+                                             torch.unsqueeze(acts_log_probs[index, :], 0), values[index, :],
+                                             loss[index, :], masks, bad_masks)
 
-	def calc_novelty(self):
-		whole_losses = []
-		whole_indices = []
-		whole_feasibles = []
-		for _, batch in enumerate(
-				DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
-			inputs, labels, prestates, acts, _, _, feasible, _, index = batch
-			targets = labels[:, self.transform]
-			outputs = self.worldModel(labels)
-			losses = []
-			for i in range(self.batch_size):
-				losses.append(torch.unsqueeze(
-					self.criterion(outputs[i, self.environment.predict_mask], targets[i,:]),
-					dim=0))
-				whole_feasibles.append(feasible[i].item())
+    def calc_novelty(self):
+        whole_losses = []
+        whole_indices = []
+        whole_feasibles = []
+        for _, batch in enumerate(
+                DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
+            inputs, labels, prestates, acts, _, _, feasible, _, index = batch
+            targets = labels[:, self.transform]
+            outputs = self.worldModel(labels)
+            losses = []
+            for i in range(self.batch_size):
+                losses.append(torch.unsqueeze(
+                    self.criterion(outputs[i, self.environment.predict_mask], targets[i, :]),
+                    dim=0))
+                whole_feasibles.append(feasible[i].item())
 
-			whole_losses += [l.item() for l in losses]
-			whole_indices += [l.item() for l in index]
-		return whole_losses, whole_indices, whole_feasibles
-
-
-	
+            whole_losses += [l.item() for l in losses]
+            whole_indices += [l.item() for l in index]
+        return whole_losses, whole_indices, whole_feasibles

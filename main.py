@@ -8,17 +8,17 @@ import os
 import shutil
 import pickle
 import collections
-from CuriousSamplePlanner.planning_pybullet.motion.motion_planners.discrete import astar
+from planning_pybullet.motion.motion_planners.discrete import astar
 import sys
 
 # Planners
-from CuriousSamplePlanner.trainers.state_estimation_planner import StateEstimationPlanner
-from CuriousSamplePlanner.trainers.random_search_planner import RandomSearchPlanner
-from CuriousSamplePlanner.trainers.effect_prediction_planner import EffectPredictionPlanner
-from CuriousSamplePlanner.trainers.random_state_embedding_planner import RandomStateEmbeddingPlanner
-from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
-from CuriousSamplePlanner.scripts.utils import *
-from CuriousSamplePlanner.agent.planning_agent import PlanningAgent
+from trainers.state_estimation_planner import StateEstimationPlanner
+from trainers.random_search_planner import RandomSearchPlanner
+from trainers.effect_prediction_planner import EffectPredictionPlanner
+from trainers.random_state_embedding_planner import RandomStateEmbeddingPlanner
+from trainers.ACPlanner import ACPlanner
+from scripts.utils import *
+from agent.planning_agent import PlanningAgent
 
 
 def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
@@ -55,7 +55,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
 
     experiment_dict['exp_path'] = "./solution_data/" + experiment_dict["exp_id"]
     experiment_dict['load_path'] = "./solution_data/" + experiment_dict["load_id"]
-    if (not os.path.isdir("./solution_data")):
+    if not os.path.isdir("./solution_data"):
         os.mkdir("./solution_data")
     #experiment_dict['exp_path'] = "example_images/" + experiment_dict["exp_id"]
     #experiment_dict['load_path'] = 'example_images/' + experiment_dict["load_id"]
@@ -69,8 +69,8 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     PC = getattr(sys.modules[__name__], experiment_dict['mode'])
     planner = PC(experiment_dict)
     
-    if (load == None):
-        if (os.path.isdir(experiment_dict['exp_path'])):
+    if load == None:
+        if os.path.isdir(experiment_dict['exp_path']):
             shutil.rmtree(experiment_dict['exp_path'])
 
         os.mkdir(experiment_dict['exp_path'])
@@ -78,7 +78,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         graph, plan, experiment_dict = planner.plan()
 
         # Save the graph so we can load it back in later
-        if(graph is not None):
+        if graph is not None:
             graph_filehandler = open(experiment_dict['exp_path'] + "/found_graph.pkl", 'wb')
             filehandler = open(experiment_dict['exp_path'] + "/found_path.pkl", 'wb')
 
@@ -99,7 +99,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
 
 if __name__ == '__main__':
     exp_id = str(sys.argv[1])
-    if(len(sys.argv)>3):
+    if len(sys.argv)>3:
         load_id = str(sys.argv[3])
     else:
         load_id = ""

@@ -33,19 +33,19 @@ from torch import nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import collections
-from motion_planners.discrete import astar
+from planning_pybullet.motion.motion_planners.discrete import astar
 import sys
 
-from CuriousSamplePlanner.tasks.three_block_stack import ThreeBlocks
+from tasks.three_block_stack import ThreeBlocks
 
-from CuriousSamplePlanner.tasks.ball_ramp import BallRamp
-from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
-from CuriousSamplePlanner.tasks.bookshelf import BookShelf
-from CuriousSamplePlanner.tasks.five_block_stack import FiveBlocks
-from CuriousSamplePlanner.scripts.utils import *
+from tasks.ball_ramp import BallRamp
+from tasks.pulley import PulleySeesaw
+from tasks.bookshelf import BookShelf
+from tasks.five_block_stack import FiveBlocks
+from scripts.utils import *
 
-from CuriousSamplePlanner.trainers.plan_graph import PlanGraph
-from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
+from trainers.plan_graph import PlanGraph
+from trainers.dataset import ExperienceReplayBuffer
 import copy
 
 
@@ -59,12 +59,12 @@ class Link(ApplyForce):
         self.sphere = p.loadURDF("./models/yellow_sphere.urdf", self.link_point1)
         return []
 
-class PlanningAgent():
+class PlanningAgent:
 
     def __init__(self, environment):
         self.environment = environment
         self.links = []
-        if(self.environment.robot != None):
+        if self.environment.robot != None:
             self.robot = self.environment.robot
         else:
             self.add_arm(self.environment.arm_size)
@@ -76,7 +76,7 @@ class PlanningAgent():
         start_world = WorldSaver()
         commands = []
         for i in range(1, len(plan)):
-            if(plan[i].command != None):
+            if plan[i].command != None:
                 commands.append(plan[i].command)
                 self.execute(plan[i].command)
             else:
@@ -85,10 +85,10 @@ class PlanningAgent():
                 macroaction.gmp = True
                 macroaction.teleport = False
                 command, aux = macroaction.execute(config = self.environment.get_current_config(), embedding = plan[i].action, sim=True)
-                if(aux != None):
+                if aux != None:
                     self.links.append(aux)
                 # Restore the state
-                if(command is not None):
+                if command is not None:
                     self.execute(command)
                     self.environment.run_until_stable(hook = self.hook, dt=0.01)
                 commands.append(command)
@@ -114,7 +114,7 @@ class PlanningAgent():
 
     def hook(self):
         for (link_object, link, link_transform, _) in self.links:
-            if(link_object.sphere != None):
+            if link_object.sphere != None:
                 lpos, lquat = p.getBasePositionAndOrientation(link)
                 le = p.getEulerFromQuaternion(lquat)
                 lpose = Pose(Point(*lpos), Euler(*le))

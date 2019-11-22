@@ -228,7 +228,7 @@ def main(args):
     env_name = 'ThreeBlocks'
     env = ThreeBlocks(experiment_dict)
 
-    env = envs.Logger(env, interval=args.update_steps)
+    # env = envs.Logger(env, interval=args.update_steps)
     # env = envs.Normalizer(env, states=True, rewards=True)
     env = envs.Torch(env)
     if args.record:

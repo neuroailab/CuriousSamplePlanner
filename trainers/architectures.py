@@ -1,31 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import pybullet as p
-import numpy as np
-import time
-import random
-import math
-import imageio
-import matplotlib.pyplot as plt
-import os
-import shutil
-import h5py
-import imageio
-import pickle
-import collections
-import sys
-
-from tasks.three_block_stack import ThreeBlocks
-
-from tasks.ball_ramp import BallRamp
-from tasks.pulley import PulleySeesaw
-from tasks.bookshelf import BookShelf
-from scripts.utils import *
 
 import torch
 from torch import nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
 
 
 class Flatten(nn.Module):

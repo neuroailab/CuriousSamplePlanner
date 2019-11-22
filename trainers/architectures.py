@@ -4,6 +4,9 @@ from __future__ import print_function
 import torch
 from torch import nn
 
+from cherry import models
+import cherry.distributions as dist
+
 
 class Flatten(nn.Module):
     def forward(self, x):
@@ -56,3 +59,28 @@ class DynamicsModel(nn.Module):
         state_action = torch.cat([config, action], dim=1)
         l = self.mlp(state_action)
         return l
+
+
+class RNDCuriosityModel(nn.Module):
+    def __init__(self, env):
+        super(RNDCuriosityModel, self).__init__()
+        self.hsz = 128
+        self.osz = 64
+        self.teacher = models.robotics.RoboticsMLP(env.state_size + env.action_size, self.osz,
+                                                     layer_sizes=[self.hsz, self.hsz])
+        for param in self.teacher.parameters():
+            param.requires_grad = False
+        self.student = models.robotics.RoboticsMLP(env.state_size + env.action_size, self.osz,
+                                                     layer_sizes=[self.hsz, self.hsz])
+
+    def forward(self, state, action):
+        state_action = torch.cat((state, action), dim=-1)
+        teacher_pred = self.teacher(state_action)
+        student_pred = self.student(state_action)
+        return (teacher_pred - student_pred).pow(2).mean(-1)
+
+    def compute_loss(self, state, action):
+        return self.forward(state, action).mean()
+
+    def parameters(self, recurse=True):
+        return self.student.parameters(recurse=recurse)

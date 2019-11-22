@@ -50,6 +50,9 @@ class ThreeBlocks(Environment):
         p.setGravity(0, 0, -10)
         p.stepSimulation(physicsClientId=0)
 
+        self.reward_range = None
+        self.metadata = None
+
     @property
     def fixed(self):
         return [self.floor]

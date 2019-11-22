@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.utils import AddBias
+from rl_ppo_rnd.a2c_ppo_acktr.utils import AddBias
 
 # TODO: In order to make this code faster:
 # 1) Implement _extract_patches as a single cuda kernel

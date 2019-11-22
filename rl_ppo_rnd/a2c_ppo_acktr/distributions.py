@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.utils import AddBias, init
+from rl_ppo_rnd.a2c_ppo_acktr.utils import AddBias, init
 
 """
 Modify standard PyTorch distributions so they are compatible with this code.

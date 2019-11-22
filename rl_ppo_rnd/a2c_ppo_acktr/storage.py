@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
-from CuriousSamplePlanner.scripts.utils import *
+from scripts.utils import *
 
 
 def _flatten_helper(T, N, _tensor):

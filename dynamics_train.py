@@ -19,7 +19,7 @@ from cherry import envs
 
 from scripts.utils import opt_cuda
 from tasks.three_block_stack import ThreeBlocks
-from trainers.architectures import DynamicsModel
+from trainers.architectures import DynamicsModel, DynamicsCuriosityModel
 from trainers.architectures import RNDCuriosityModel
 
 

@@ -234,7 +234,6 @@ def main(args):
     if args.record:
         env = envs.Recorder(env, 'out/videos/', format='gif')
     env = envs.Runner(env)
-    env.seed(args.seed)
 
     writer = SummaryWriter(log_dir='out/tensorboard/{}'.format(env_name)) if args.tb else None
 

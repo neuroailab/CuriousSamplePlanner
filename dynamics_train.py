@@ -265,13 +265,13 @@ def main(args):
         # replay = env.run(get_action, steps=args.update_steps, render=args.render)
         replay = env.run(get_action, steps=args.update_steps, render=False)
         # dynamics_dataset += replay
-        dynamics_dataset = replay
+        dynamics_dataset = opt_cuda(replay)
         if len(dynamics_dataset) > int(1e6):
             dynamics_dataset = dynamics_dataset[-int(1e6):]
 
         # Update forward dynamics model
-            if th.cuda.is_available():
-                dynamics_dataset = dynamics_dataset.cuda(device='0')
+        if th.cuda.is_available():
+            dynamics_dataset = dynamics_dataset.cuda(device='0')
         dynamics_update(args, dynamics_dataset, dynamics_opt, dynamics, env, writer, epoch)
         if epoch % 10 == 0:
             th.save(dynamics.state_dict(), 'out/{}_dynamics.pt'.format(env_name))

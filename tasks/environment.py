@@ -290,7 +290,7 @@ class Environment:
             done = True
 
         # return opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0)), opt_cuda(torch.unsqueeze(torch.tensor(reward), 0)), [done], [{"episode": {"r": reward}}]
-        return opt_cuda(torch.tensor(self.get_current_config().unsqueeze(0).float())), \
+        return opt_cuda(torch.tensor(self.get_current_config()).unsqueeze(0).float()), \
                opt_cuda(torch.tensor(reward).unsqueeze(0).float()), opt_cuda(torch.tensor([done])), \
                [{"episode": {"r": reward}}]
 

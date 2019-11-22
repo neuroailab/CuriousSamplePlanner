@@ -204,7 +204,7 @@ class Environment:
 
             # config = self.get_current_config()
             preconfig = parent.config
-            config = self.dynamics.forward(opt_cuda(torch.tensor(preconfig).type(torch.FloatTensor)), opt_cuda(action))
+            config = self.dynamics.forward(opt_cuda(torch.tensor(preconfig).float()).unsqueeze(0), opt_cuda(action))
             action = action[0].detach().cpu().numpy()
 
             # count = 0

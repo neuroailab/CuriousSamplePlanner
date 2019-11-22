@@ -238,7 +238,13 @@ def main(args):
     writer = SummaryWriter(log_dir='out/tensorboard/{}'.format(env_name)) if args.tb else None
 
     dynamics = DynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
-    curiosity = RNDCuriosityModel(env)
+    if args.curiosity_mode == 0:
+        curiosity = DynamicsCuriosityModel(env)
+    elif args.curiosity_mode == 1:
+        curiosity = RNDCuriosityModel(env)
+    else:
+        print("Unknown curiosity metric specified: {}".format(args.curiosity_mode))
+        sys.exit(0)
     dynamics = opt_cuda(dynamics)
     curiosity = opt_cuda(curiosity)
 

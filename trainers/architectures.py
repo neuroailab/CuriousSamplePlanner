@@ -61,6 +61,30 @@ class DynamicsModel(nn.Module):
         return l
 
 
+class CuriosityModel(nn.Module):
+    def __init__(self, env):
+        super(CuriosityModel, self).__init__()
+        self.hsz = 128
+        self.curiosity = models.robotics.RoboticsMLP(env.state_size + env.action_size, 1,
+                                                     layer_sizes=[self.hsz, self.hsz])
+
+    def forward(self, state, action):
+        state_action = torch.cat((state, action), dim=-1)
+        return self.curiosity(state_action)
+
+
+class DynamicsCuriosityModel(CuriosityModel):
+    def __init__(self, env):
+        super(DynamicsCuriosityModel, self).__init__(env)
+
+    def compute_loss(self, state, action, next_state, dynamics):
+        pred_next_states = dynamics.forward(state, action)
+
+        dynamics_loss = (pred_next_states - next_state).pow(2).sum(-1).detach()
+        pred_dynamics_loss = self.forward(state, action)
+        return (pred_dynamics_loss - dynamics_loss).pow(2).mean()
+
+
 class RNDCuriosityModel(nn.Module):
     def __init__(self, env):
         super(RNDCuriosityModel, self).__init__()

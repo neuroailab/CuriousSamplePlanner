@@ -4,7 +4,7 @@ from __future__ import print_function
 from scripts.utils import *
 from trainers.dataset import ExperienceReplayBuffer
 from trainers.plan_graph import PlanGraph
-
+from tasks.three_block_stack import ThreeBlocks
 
 class Planner:
     def __init__(self, experiment_dict):

@@ -63,6 +63,7 @@ class Environment:
             self.predict_mask = self.state.positions+self.state.links
 
         self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
+        self.observation_space = spaces.Box(low=-1, high=1, shape=(self.config_size,))
         self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
         self.dynamics = opt_cuda(DynamicsModel(config_size=self.config_size, action_size=self.action_space_size))
         # dynamics.load_state_dict(torch.load(self.dynamics_path, map_location='cpu'))

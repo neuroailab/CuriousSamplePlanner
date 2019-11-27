@@ -36,10 +36,11 @@ def reparameterize(X, min_rv, max_rv):
 def opt_cuda(t):
     if not torch.cuda.is_available():
         return t
-    if len(sys.argv) > 2:
-        cuda = "cuda:" + str(sys.argv[2])
-    else:
-        cuda = "cuda:0"
+    # if len(sys.argv) > 2:
+    #     cuda = "cuda:" + str(sys.argv[2])
+    # else:
+    #     cuda = "cuda:0"
+    cuda = "cuda:0"
     return t.cuda(cuda)
 
 

@@ -82,6 +82,7 @@ class PlanningAgent:
                 commands.append(plan[i].command)
                 self.execute(plan[i].command)
             else:
+                print(plan[i].action)
                 for perspective in self.environment.perspectives:
                     imageio.imwrite(osp.join(self.out_path, '{}.jpg'.format(i)),
                                     take_picture(perspective[0], perspective[1], 0, size=512))
@@ -116,6 +117,10 @@ class PlanningAgent:
             p.stepSimulation()
             self.hook()
             time.sleep(0.01)
+
+        for perspective in self.environment.perspectives:
+            imageio.imwrite(osp.join(self.out_path, '{}.jpg'.format(len(plan))),
+                            take_picture(perspective[0], perspective[1], 0, size=512))
 
 
 

@@ -15,7 +15,8 @@ def parse_args():
 
 
 def main(args):
-    num_trajs = 25
+    # num_trajs = 25
+    num_trajs = 100
     form = 'expert{}/found_path.pkl'
 
     states, actions, next_states = [], [], []

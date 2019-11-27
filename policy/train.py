@@ -1,6 +1,8 @@
 import sys
 
 import time
+from itertools import accumulate
+
 import torch
 import pickle
 import random
@@ -33,38 +35,46 @@ class PolicyNet(nn.Module):
 
     def forward(self, x):
         action_scores = self.actor(x)
-        action_density = Normal(loc=action_scores, scale=self.logstd.exp())
-        return action_density.rsample()
+        # action_density = Normal(loc=action_scores, scale=self.logstd.exp())
+        # return action_density.rsample()
+        return action_scores
 
 
 def train(args):
     states, actions, _ = pickle.load(open(args.path, 'rb'))
     converged = False
-    epsilon = 1e-5
+    epsilon = 1e-3
     prev_val_loss = None
     policy = opt_cuda(PolicyNet(states.shape[-1], actions.shape[-1]))
     policy.train()
     num_samples = states.shape[0]
     train_val_split = 0.9
-    policy_opt = torch.optim.Adam(policy.parameters(), lr=1e-3)
+    policy_opt = torch.optim.Adam(policy.parameters(), lr=1e-3, weight_decay=1e-2)
+    # policy_opt = torch.optim.Adam(policy.parameters(), lr=1e-3, weight_decay=0.0)
     num_epochs = 0
-    min_epochs = 2e4
-    while not converged:
-        train_idxs = random.sample(range(num_samples), int(train_val_split * num_samples))
-        val_idxs = list(set(range(num_samples)) - set(train_idxs))
+    train_idxs = random.sample(range(num_samples), int(train_val_split * num_samples))
+    val_idxs = list(set(range(num_samples)) - set(train_idxs))
 
-        train_states = opt_cuda(torch.tensor(states[train_idxs, :])).float()
-        train_actions = opt_cuda(torch.tensor(actions[train_idxs, :])).float()
-        policy_actions = policy.forward(train_states)
-        loss = (policy_actions - train_actions).pow(2).sum(1).mean(0)
-        policy_opt.zero_grad()
-        loss.backward()
-        policy_opt.step()
+    train_states = opt_cuda(torch.tensor(states[train_idxs, :])).float()
+    train_actions = opt_cuda(torch.tensor(actions[train_idxs, :])).float()
+    val_states = opt_cuda(torch.tensor(states[val_idxs, :])).float()
+    val_actions = opt_cuda(torch.tensor(actions[val_idxs, :])).float()
+    bsz = 16
+    num_batches = int(len(train_idxs) / bsz)
+    min_epochs = 1000
+    while not converged:
+        batch_idxs = [list(range(len(train_idxs)))[x - y:x] for x, y in zip(accumulate([bsz] * num_batches), [bsz] * num_batches)]
+        random.shuffle(batch_idxs)
+        for batch in batch_idxs:
+            batch_states, batch_actions = train_states[batch, :], train_actions[batch, :]
+            policy_actions = policy.forward(batch_states)
+            loss = (policy_actions - batch_actions).pow(2).sum(1).mean(0)
+            policy_opt.zero_grad()
+            loss.backward()
+            policy_opt.step()
         num_epochs += 1
 
         with torch.no_grad():
-            val_states = opt_cuda(torch.tensor(states[val_idxs, :])).float()
-            val_actions = opt_cuda(torch.tensor(actions[val_idxs, :])).float()
             policy_actions = policy.forward(val_states)
             val_loss = (policy_actions - val_actions).pow(2).sum(1).mean(0).item()
 

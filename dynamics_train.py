@@ -249,8 +249,8 @@ def main(args):
     curiosity = opt_cuda(curiosity)
 
     dynamics_dataset = ch.ExperienceReplay()
-    dynamics_opt = optim.Adam(dynamics.parameters(), lr=args.dynamics_lr, eps=1e-5)
-    curiosity_opt = optim.Adam(curiosity.parameters(), lr=args.curiosity_lr, eps=1e-5)
+    dynamics_opt = optim.Adam(dynamics.parameters(), lr=args.dynamics_lr, weight_decay=1e-2)
+    curiosity_opt = optim.Adam(curiosity.parameters(), lr=args.curiosity_lr)
     num_updates = args.total_steps // args.update_steps + 1
     if args.planning_mode == 0:
         print('Running vanilla MPC...')

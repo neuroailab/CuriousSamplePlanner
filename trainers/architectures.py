@@ -58,7 +58,7 @@ class DynamicsModel(nn.Module):
     def forward(self, config, action):
         state_action = torch.cat([config, action], dim=1)
         l = self.mlp(state_action)
-        return l
+        return l + config
 
 
 class CuriosityModel(nn.Module):

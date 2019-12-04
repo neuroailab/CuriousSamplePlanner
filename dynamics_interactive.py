@@ -94,6 +94,7 @@ def update_dynamics_model(experiment_dict, csp_paths):
     env = planner.environment
     dynamics = DynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
     dynamics = opt_cuda(dynamics)
+    dynamics.load_state_dict(torch.load(experiment_dict['dynamics_path']))
     dynamics_opt = optim.Adam(dynamics.parameters(), lr=5e-4)  # Only want to finetune
 
     preds, targets = [], []

@@ -41,7 +41,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "training": True,
         "exp_id": exp_id,
         "load_id": load_id,
-        "enable_asm": False,
+        "enable_asm": True,
         "growth_factor": 10,
         "detailed_gmp": False,
         "adaptive_batch": True,

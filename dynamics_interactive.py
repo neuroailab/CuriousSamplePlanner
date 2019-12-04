@@ -21,6 +21,19 @@ from trainers.ACPlanner import ACPlanner
 from scripts.utils import *
 from agent.planning_agent import PlanningAgent
 
+from planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
+    Pose, Point, Euler, set_default_camera, stable_z, \
+    BLOCK_URDF, load_model, wait_for_user, disconnect, DRAKE_IIWA_URDF, user_input, update_state, disable_real_time,inverse_kinematics,end_effector_from_body,approach_from_grasp, get_joints, get_joint_positions
+
+
+from planning_pybullet.pybullet_tools.utils import multiply, invert, get_pose, set_pose, get_movable_joints, \
+    set_joint_positions, add_fixed_constraint_2, enable_real_time, disable_real_time, joint_controller, \
+    enable_gravity, get_refine_fn, user_input, wait_for_duration, link_from_name, get_body_name, sample_placement, \
+    end_effector_from_body, approach_from_grasp, plan_joint_motion, GraspInfo, Pose, INF, Point, \
+    inverse_kinematics, pairwise_collision, remove_fixed_constraint, Attachment, get_sample_fn, \
+    step_simulation, refine_path, plan_direct_joint_motion, get_joint_positions, dump_world, get_link_pose,control_joints
+
+
 
 def run_csp(experiment_dict, iteration, exp_id="no_expid", load_id="no_loadid"):
     # Set up the hyperparameters
@@ -66,6 +79,15 @@ def run_csp(experiment_dict, iteration, exp_id="no_expid", load_id="no_loadid"):
     return paths
 
 
+def hook(self):
+    for (link_object, link, link_transform, _) in self.links:
+        if link_object.sphere != None:
+            lpos, lquat = p.getBasePositionAndOrientation(link)
+            le = p.getEulerFromQuaternion(lquat)
+            lpose = Pose(Point(*lpos), Euler(*le))
+            set_pose(link_object.sphere, multiply(lpose, link_transform))
+
+
 def update_dynamics_model(experiment_dict, csp_paths):
     PC = getattr(sys.modules[__name__], experiment_dict['mode'])
     planner = PC(experiment_dict)
@@ -76,13 +98,21 @@ def update_dynamics_model(experiment_dict, csp_paths):
 
     preds, targets = [], []
     for path in csp_paths:
-        final_config = opt_cuda(torch.tensor(path[-1].config).float().unsqueeze(0))
+        env.set_state(path[0].config)
+        # final_config = opt_cuda(torch.tensor(path[-1].config).float().unsqueeze(0))
         current = opt_cuda(torch.tensor(path[0].config).float().unsqueeze(0))
         for node in path:
+            macroaction = env.macroaction
+            feasible, command = macroaction.execute(config=env.get_current_config(), embedding=node.action, sim=True)
+            if command is not None:
+                command.refine(num_steps=10).execute(time_step=0.001, hook=hook)
+                env.run_until_stable(hook=hook, dt=0.01)
+
             action = opt_cuda(torch.tensor(node.action).unsqueeze(0))
             current = dynamics.forward(current, action)
         preds.append(current)
-        targets.append(final_config)
+        targets.append(env.get_current_config())
+
     preds, targets = opt_cuda(torch.stack(preds)), opt_cuda(torch.stack(targets))
     loss = (preds - targets).pow(2).sum(1).mean()
     dynamics_opt.zero_grad()

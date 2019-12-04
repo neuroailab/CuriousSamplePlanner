@@ -35,7 +35,8 @@ class PlanGraph(Dataset):
         self.node_key = 0
         self.selection_strategy = node_sampling
         if plan_graph_path != None:
-            self.plan_graph = np.load(plan_graph_path).item()
+            # self.plan_graph = np.load(plan_graph_path).item()
+            self.plan_graph = np.load(plan_graph_path, allow_pickle=True).item()
         else:
             self.plan_graph = collections.OrderedDict()
 

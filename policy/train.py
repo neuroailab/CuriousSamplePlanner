@@ -59,9 +59,10 @@ def train(args):
     train_actions = opt_cuda(torch.tensor(actions[train_idxs, :])).float()
     val_states = opt_cuda(torch.tensor(states[val_idxs, :])).float()
     val_actions = opt_cuda(torch.tensor(actions[val_idxs, :])).float()
-    bsz = 16
+    # bsz = 8
+    bsz = 64
     num_batches = int(len(train_idxs) / bsz)
-    min_epochs = 1000
+    min_epochs = 2000
     while not converged:
         batch_idxs = [list(range(len(train_idxs)))[x - y:x] for x, y in zip(accumulate([bsz] * num_batches), [bsz] * num_batches)]
         random.shuffle(batch_idxs)
@@ -138,7 +139,11 @@ def eval(args):
 
 
 def main(args):
-    train(args)
+    # retrain = True
+    retrain = False
+
+    if retrain:
+        train(args)
     eval(args)
 
 if __name__ == '__main__':

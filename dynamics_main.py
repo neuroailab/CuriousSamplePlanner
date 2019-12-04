@@ -80,21 +80,27 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
 
         # Save the graph so we can load it back in later
         if graph is not None:
-            graph_filehandler = open(experiment_dict['exp_path'] + "/found_graph.pkl", 'wb')
+            # graph_filehandler = open(experiment_dict['exp_path'] + "/found_graph.pkl", 'wb')
+            graph_filehandler = open(experiment_dict['exp_path'] + "/found_graph.npy", 'wb')
             filehandler = open(experiment_dict['exp_path'] + "/found_path.pkl", 'wb')
 
-            pickle.dump(graph, graph_filehandler)
+            # pickle.dump(graph, graph_filehandler)
+            graph.save(graph_filehandler)
             pickle.dump(plan, filehandler)
 
         stats_filehandler = open(experiment_dict['exp_path'] + "/stats.pkl", 'wb')
         pickle.dump(experiment_dict, stats_filehandler)
 
+        paths = graph.get_all_paths()
+        print(paths)
+
     else:
         # Find the plan and execute it
         filehandler = open(experiment_dict['exp_path'] + '/' + load, 'rb')
+        out_path = experiment_dict['exp_path']
         plan = pickle.load(filehandler)
 
-        agent = PlanningAgent(planner.environment)
+        agent = PlanningAgent(planner.environment, out_path)
         agent.multistep_plan(plan)
 
 

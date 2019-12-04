@@ -16,7 +16,8 @@ def parse_args():
 
 def main(args):
     # num_trajs = 25
-    num_trajs = 100
+    # num_trajs = 100
+    num_trajs = 1000
     form = 'expert{}/found_path.pkl'
 
     states, actions, next_states = [], [], []
@@ -33,6 +34,7 @@ def main(args):
             next_states.append(next_state)
 
     states, actions, next_states = np.array(states), np.array(actions), np.array(next_states)
+    print(states.shape, actions.shape, next_states.shape)
     pickle.dump((states, actions, next_states), open(osp.join(args.path, 'expert_dataset.pkl'), 'wb'))
 
 if __name__ == '__main__':

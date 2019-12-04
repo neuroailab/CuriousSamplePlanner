@@ -282,11 +282,13 @@ def main(args):
         dynamics_update(args, dynamics_dataset, dynamics_opt, dynamics, env, writer, epoch)
         if epoch % 10 == 0:
             th.save(dynamics.state_dict(), 'out/{}_dynamics.pt'.format(env_name))
+            th.save(curiosity.state_dict(), 'out/{}_curiosity.pt'.format(env_name))
 
         # Update curiosity model
         curiosity_update(args, dynamics_dataset, curiosity_opt, dynamics, curiosity, env, writer, epoch)
 
     th.save(dynamics.state_dict(), 'out/{}_dynamics.pt'.format(env_name))
+    th.save(curiosity.state_dict(), 'out/{}_curiosity.pt'.format(env_name))
     if writer is not None:
         writer.close()
 

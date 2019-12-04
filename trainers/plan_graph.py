@@ -96,6 +96,19 @@ class PlanGraph(Dataset):
         print(self.plan_graph)
         path = astar(start_node, goal_node, distance, self.plan_graph, collision)
         print(path)
-        for node_i in range(1, len(path)):
-            print(path[node_i].command)
+        # for node_i in range(1, len(path)):
+        #     print(path[node_i].command)
         return path
+
+    def get_all_paths(self):
+        start_node = self.find_node(0)
+        assert start_node is not None
+        paths = []
+        distance = lambda a, b: 1
+        collision = lambda s: False
+        for node in list(self.plan_graph.keys()):
+            if node.node_key == 0:
+                continue
+            path = astar(start_node, node, distance, self.plan_graph, collision)
+            paths.append(path)
+        return paths

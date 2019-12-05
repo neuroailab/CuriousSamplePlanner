@@ -50,10 +50,12 @@ class Planner:
         run_index = 0
 
         while True:
+            print('Running planner iteration {}'.format(run_index + 1))
             features, states, prestates, actions, action_log_probs, \
             values, feasible, parents, goal, goal_prestate, goal_parent, \
             goal_action, goal_command, commands = self.environment.collect_samples(self.graph)
             if goal is not None:
+                print('Achieved goal state')
                 # self.environment.set_state(goal)
                 # for perspective in self.environment.perspectives:
                 #     imageio.imwrite(self.exp_path

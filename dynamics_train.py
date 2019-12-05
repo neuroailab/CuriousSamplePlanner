@@ -237,8 +237,13 @@ def main(args):
 
     writer = SummaryWriter(log_dir='out/tensorboard/{}'.format(env_name)) if args.tb else None
 
-    dynamics = DynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
-    # dynamics = FactoredDynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
+    obj_factored = True
+    # obj_factored = False
+    if not obj_factored:
+        dynamics = DynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
+    else:
+        dynamics = FactoredDynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
+
     if args.curiosity_mode == 0:
         curiosity = DynamicsCuriosityModel(env)
     elif args.curiosity_mode == 1:
@@ -282,13 +287,19 @@ def main(args):
             dynamics_dataset = dynamics_dataset.cuda(device='0')
         dynamics_update(args, dynamics_dataset, dynamics_opt, dynamics, env, writer, epoch)
         if epoch % 10 == 0:
-            th.save(dynamics.state_dict(), 'out/{}_dynamics.pt'.format(env_name))
+            if not obj_factored:
+                th.save(dynamics.state_dict(), 'out/{}_dynamics.pt'.format(env_name))
+            else:
+                th.save(dynamics.state_dict(), 'out/{}_dynamics_factored.pt'.format(env_name))
             th.save(curiosity.state_dict(), 'out/{}_curiosity.pt'.format(env_name))
 
         # Update curiosity model
         curiosity_update(args, dynamics_dataset, curiosity_opt, dynamics, curiosity, env, writer, epoch)
 
-    th.save(dynamics.state_dict(), 'out/{}_dynamics.pt'.format(env_name))
+    if not obj_factored:
+        th.save(dynamics.state_dict(), 'out/{}_dynamics.pt'.format(env_name))
+    else:
+        th.save(dynamics.state_dict(), 'out/{}_dynamics_factored.pt'.format(env_name))
     th.save(curiosity.state_dict(), 'out/{}_curiosity.pt'.format(env_name))
     if writer is not None:
         writer.close()

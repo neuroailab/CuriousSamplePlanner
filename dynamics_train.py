@@ -240,8 +240,10 @@ def main(args):
     obj_factored = True
     # obj_factored = False
     if not obj_factored:
+        print('Using standard dynamics model')
         dynamics = DynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
     else:
+        print('Using factored object dynamics model')
         dynamics = FactoredDynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
 
     if args.curiosity_mode == 0:

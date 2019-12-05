@@ -51,6 +51,7 @@ class Environment:
 
         self.arm_size=1
         self.dynamics_path = experiment_dict['dynamics_path']
+        self.num_steps = 0
 
 
     def config_state_attrs(self, linking=False):
@@ -65,9 +66,10 @@ class Environment:
         self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
         self.observation_space = spaces.Box(low=-1, high=1, shape=(self.config_size,))
         self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
-        # self.dynamics = opt_cuda(DynamicsModel(config_size=self.config_size, action_size=self.action_space_size))
-        self.dynamics = opt_cuda(FactoredDynamicsModel(config_size=self.config_size, action_size=self.action_space_size))
-        # dynamics.load_state_dict(torch.load(self.dynamics_path, map_location='cpu'))
+        if 'factored' not in self.dynamics_path:
+            self.dynamics = opt_cuda(DynamicsModel(config_size=self.config_size, action_size=self.action_space_size))
+        else:
+            self.dynamics = opt_cuda(FactoredDynamicsModel(config_size=self.config_size, action_size=self.action_space_size))
         if self.dynamics_path != '':
             self.dynamics.load_state_dict(
                 torch.load(self.dynamics_path, map_location='cpu' if not torch.cuda.is_available() else "cuda:0"))
@@ -282,13 +284,14 @@ class Environment:
     def step(self, action):
         _ = self.take_action(action)
         reward = -0.2
-        done = False
+        done = False if self.num_steps < self.max_steps else True
         self.run_until_stable(dt=0)
         time.sleep(0.01)
         post_stable_state = self.get_current_config()
         if self.check_goal_state(post_stable_state):
             reward = 1.0
             done = True
+        self.num_steps += 1
 
         # return opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0)), opt_cuda(torch.unsqueeze(torch.tensor(reward), 0)), [done], [{"episode": {"r": reward}}]
         return self.get_current_config(), reward, done, {}

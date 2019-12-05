@@ -35,7 +35,7 @@ from tasks.state import State
 from scripts.utils import *
 from gym import spaces
 from rl_ppo_rnd.a2c_ppo_acktr.model import Policy
-from trainers.architectures import DynamicsModel
+from trainers.architectures import DynamicsModel, FactoredDynamicsModel
 
 
 class Environment:
@@ -65,7 +65,8 @@ class Environment:
         self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
         self.observation_space = spaces.Box(low=-1, high=1, shape=(self.config_size,))
         self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
-        self.dynamics = opt_cuda(DynamicsModel(config_size=self.config_size, action_size=self.action_space_size))
+        # self.dynamics = opt_cuda(DynamicsModel(config_size=self.config_size, action_size=self.action_space_size))
+        self.dynamics = opt_cuda(FactoredDynamicsModel(config_size=self.config_size, action_size=self.action_space_size))
         # dynamics.load_state_dict(torch.load(self.dynamics_path, map_location='cpu'))
         if self.dynamics_path != '':
             self.dynamics.load_state_dict(

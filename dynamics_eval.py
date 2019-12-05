@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument("--curiosity-mode", type=int, default=1, help="Curiosity metric (0:FD 1:RND)")
     parser.add_argument("--mpc-samples", type=int, default=2000,
                         help="Number of random plan samples for MPC (default: 1000)")
-    parser.add_argument("--mpc-horizon", type=int, default=3,
+    parser.add_argument("--mpc-horizon", type=int, default=10,
                         help="Planning horizon for MPC (default: 5)")
     args = parser.parse_args()
     return args
@@ -75,8 +75,8 @@ def save_curious_path_images(args):
 
     env = envs.Torch(env)
 
-    # obj_factored = True
-    obj_factored = False
+    obj_factored = True
+    # obj_factored = False
     if not obj_factored:
         print('Using standard dynamics model')
         dynamics = DynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
@@ -118,8 +118,7 @@ def save_curious_path_images(args):
         shutil.rmtree(args.out_path)
     os.mkdir(args.out_path)
 
-
-    num_episodes = 1
+    num_episodes = 10
     max_steps = 20
     num_objs = 3
     obj_size = 6

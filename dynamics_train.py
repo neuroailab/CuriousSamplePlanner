@@ -19,7 +19,7 @@ from cherry import envs
 
 from scripts.utils import opt_cuda
 from tasks.three_block_stack import ThreeBlocks
-from trainers.architectures import DynamicsModel, DynamicsCuriosityModel
+from trainers.architectures import DynamicsModel, DynamicsCuriosityModel, FactoredDynamicsModel
 from trainers.architectures import RNDCuriosityModel
 
 
@@ -238,6 +238,7 @@ def main(args):
     writer = SummaryWriter(log_dir='out/tensorboard/{}'.format(env_name)) if args.tb else None
 
     dynamics = DynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
+    # dynamics = FactoredDynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
     if args.curiosity_mode == 0:
         curiosity = DynamicsCuriosityModel(env)
     elif args.curiosity_mode == 1:

@@ -123,14 +123,20 @@ class DynamicsCuriosityModel(CuriosityModel):
 class RNDCuriosityModel(nn.Module):
     def __init__(self, env):
         super(RNDCuriosityModel, self).__init__()
-        self.hsz = 128
+        hidden = 128
         self.osz = 64
-        self.teacher = models.robotics.RoboticsMLP(env.state_size + env.action_size, self.osz,
-                                                     layer_sizes=[self.hsz, self.hsz])
+        self.teacher = nn.Sequential(
+            nn.Linear(env.state_size + env.action_size, hidden), nn.ReLU(),
+            nn.Linear(hidden, hidden), nn.ReLU(),
+            nn.Linear(hidden, hidden), nn.ReLU(),
+            nn.Linear(hidden, self.osz))
         for param in self.teacher.parameters():
             param.requires_grad = False
-        self.student = models.robotics.RoboticsMLP(env.state_size + env.action_size, self.osz,
-                                                     layer_sizes=[self.hsz, self.hsz])
+        self.student = nn.Sequential(
+            nn.Linear(env.state_size + env.action_size, hidden), nn.ReLU(),
+            nn.Linear(hidden, hidden), nn.ReLU(),
+            nn.Linear(hidden, hidden), nn.ReLU(),
+            nn.Linear(hidden, self.osz))
 
     def forward(self, state, action):
         state_action = torch.cat((state, action), dim=-1)

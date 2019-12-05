@@ -73,6 +73,14 @@ class PlanningAgent:
 
     def multistep_plan(self, plan):
 
+        print('Plan length: {}'.format(len(plan)))
+        print(plan)
+        for n in plan:
+            print('*' * 20)
+            print('State: {}'.format(n.config))
+            print('Action: {}'.format(n.action))
+            print('Prestate: {}'.format(n.preconfig))
+        print('*' * 20)
         current_config = plan[0].config
         self.environment.set_state(current_config)
         start_world = WorldSaver()

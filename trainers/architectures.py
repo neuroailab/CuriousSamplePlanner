@@ -96,9 +96,12 @@ class FactoredDynamicsModel(nn.Module):
 class CuriosityModel(nn.Module):
     def __init__(self, env):
         super(CuriosityModel, self).__init__()
-        self.hsz = 128
-        self.curiosity = models.robotics.RoboticsMLP(env.state_size + env.action_size, 1,
-                                                     layer_sizes=[self.hsz, self.hsz])
+        hidden = 128
+        self.curiosity = nn.Sequential(
+            nn.Linear(env.state_size + env.action_size, hidden), nn.ReLU(),
+            nn.Linear(hidden, hidden), nn.ReLU(),
+            nn.Linear(hidden, hidden), nn.ReLU(),
+            nn.Linear(hidden, 1))
 
     def forward(self, state, action):
         state_action = torch.cat((state, action), dim=-1)

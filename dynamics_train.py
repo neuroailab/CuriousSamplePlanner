@@ -116,10 +116,10 @@ def curiosity_update(args, replay, optimizer, dynamics, curiosity, env, writer, 
         writer.add_scalar('Curiosity/loss', mean(curiosity_losses).item(), iteration)
 
 
-def vanilla_mpc(state, action_space, dynamics, curiosity):
+def vanilla_mpc(args, state, action_space, dynamics, curiosity):
     action_dim = action_space.shape[0]
-    num_samples = 1000
-    horizon = 10
+    num_samples = args.mpc_samples
+    horizon = args.mpc_horizon
     distro = Uniform(low=-1., high=1.)
     random_plans = opt_cuda(distro.sample(th.Size([num_samples, horizon, action_dim])))
     plan_scores = opt_cuda(th.zeros((num_samples,)))
@@ -135,10 +135,10 @@ def vanilla_mpc(state, action_space, dynamics, curiosity):
         return random_plans[indices[0], 0, :]
 
 
-def cross_entropy_method(state, action_space, dynamics, curiosity):
+def cross_entropy_method(args, state, action_space, dynamics, curiosity):
     action_dim = action_space.shape[0]
-    num_samples = 1000
-    horizon = 10
+    num_samples = args.mpc_samples
+    horizon = args.mpc_horizon
     num_iters = 5
     alpha = 0.9
     num_best = int(0.75 * num_samples)
@@ -167,10 +167,10 @@ def cross_entropy_method(state, action_space, dynamics, curiosity):
         return means[0]
 
 
-def model_predictive_path_integral(state, action_space, dynamics, curiosity):
+def model_predictive_path_integral(args, state, action_space, dynamics, curiosity):
     action_dim = action_space.shape[0]
-    num_samples = 2000
-    horizon = 10
+    num_samples = args.mpc_samples
+    horizon = args.mpc_horizon
     num_iters = 5
     alpha = 0.9
     reward_weight = 10.
@@ -265,13 +265,13 @@ def main(args):
     num_updates = args.total_steps // args.update_steps + 1
     if args.planning_mode == 0:
         print('Running vanilla MPC...')
-        get_action = lambda state: vanilla_mpc(opt_cuda(state), env.action_space, dynamics, curiosity).cpu()
+        get_action = lambda state: vanilla_mpc(args, opt_cuda(state), env.action_space, dynamics, curiosity).cpu()
     elif args.planning_mode == 1:
         print('Running cross-entropy method...')
-        get_action = lambda state: cross_entropy_method(opt_cuda(state), env.action_space, dynamics, curiosity).cpu()
+        get_action = lambda state: cross_entropy_method(args, opt_cuda(state), env.action_space, dynamics, curiosity).cpu()
     elif args.planning_mode == 2:
         print('Running model-predictive path integral control...')
-        get_action = lambda state: model_predictive_path_integral(opt_cuda(state), env.action_space, dynamics,
+        get_action = lambda state: model_predictive_path_integral(args, opt_cuda(state), env.action_space, dynamics,
                                                                   curiosity).cpu()
     else:
         print("Unknown planning mode: {}".format(args.planning_mode))

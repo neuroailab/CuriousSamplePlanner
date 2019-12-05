@@ -291,18 +291,20 @@ def main(args):
         if epoch % 10 == 0:
             if not obj_factored:
                 th.save(dynamics.state_dict(), 'out/{}_dynamics.pt'.format(env_name))
+                th.save(curiosity.state_dict(), 'out/{}_curiosity.pt'.format(env_name))
             else:
                 th.save(dynamics.state_dict(), 'out/{}_dynamics_factored.pt'.format(env_name))
-            th.save(curiosity.state_dict(), 'out/{}_curiosity.pt'.format(env_name))
+                th.save(curiosity.state_dict(), 'out/{}_curiosity_factored.pt'.format(env_name))
 
         # Update curiosity model
         curiosity_update(args, dynamics_dataset, curiosity_opt, dynamics, curiosity, env, writer, epoch)
 
     if not obj_factored:
         th.save(dynamics.state_dict(), 'out/{}_dynamics.pt'.format(env_name))
+        th.save(curiosity.state_dict(), 'out/{}_curiosity.pt'.format(env_name))
     else:
         th.save(dynamics.state_dict(), 'out/{}_dynamics_factored.pt'.format(env_name))
-    th.save(curiosity.state_dict(), 'out/{}_curiosity.pt'.format(env_name))
+        th.save(curiosity.state_dict(), 'out/{}_curiosity_factored.pt'.format(env_name))
     if writer is not None:
         writer.close()
 

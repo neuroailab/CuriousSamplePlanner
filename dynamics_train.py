@@ -247,8 +247,10 @@ def main(args):
         dynamics = FactoredDynamicsModel(config_size=env.config_size, action_size=env.action_space_size)
 
     if args.curiosity_mode == 0:
+        print('Running with forward dynamics curiosity')
         curiosity = DynamicsCuriosityModel(env)
     elif args.curiosity_mode == 1:
+        print('Running with RND curiosity')
         curiosity = RNDCuriosityModel(env)
     else:
         print("Unknown curiosity metric specified: {}".format(args.curiosity_mode))

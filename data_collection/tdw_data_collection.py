@@ -72,7 +72,7 @@ f["object_2"] = obj_mesh
 f["object_3"] = obj_mesh
 
 record_index = 0
-for record_index in range(10000):
+for record_index in range(100):
 	if(record_index%100 == 0):
 		print("Record Index: "+str(record_index))
 	obs = env.reset()

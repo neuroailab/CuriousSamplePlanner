@@ -28,16 +28,17 @@ def reparameterize(X, min_rv, max_rv):
 		Take a random variable X that has support between -1 and 1
 		Transform into a random variable that has support between min and max
 	"""
-
-	
 	return (((X+1)/2.0)% 1)*(max_rv-min_rv)+min_rv
 
 def opt_cuda(t):
-	if(len(sys.argv)>2):
-		cuda="cuda:"+str(sys.argv[2])
+	if(torch.cuda.is_available()):
+		if(len(sys.argv)>2):
+			cuda="cuda:"+str(sys.argv[2])
+		else:
+			cuda="cuda:0"
+		return t.cuda(cuda)
 	else:
-		cuda="cuda:0"
-	return t.cuda(cuda)
+		return t
 
 
 def check_state_collision(body1, body2):
@@ -47,7 +48,6 @@ def check_pairwise_collisions(bodies):
 	for i1, body1 in enumerate(bodies):
 		for i2, body2 in enumerate(bodies):
 			if (body1 != body2 and check_state_collision(body1, body2)):
-				print(i1, i2)
 				return True
 	return False
 
@@ -74,4 +74,4 @@ def take_picture(yaw, pitch, roll, size=84):
 														 lightDirection=[1, 1, 1],
 														 renderer=p.ER_TINY_RENDERER)
 
-	return np.array(img_arr[2])[:, :, :3]
+	return np.array(img_arr[2])[:, :, :3], viewMatrix, projectionMatrix

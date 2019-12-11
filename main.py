@@ -45,7 +45,8 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "growth_factor": 10,
         "detailed_gmp": False, 
         "adaptive_batch": True,
-        "num_training_epochs": 30, 
+        "num_training_epochs": 30,
+        "infeasible_penalty" : 0,
         # Stats
         "world_model_losses": [],
         "feasibility":[],

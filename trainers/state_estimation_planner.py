@@ -74,7 +74,7 @@ class StateEstimationPlanner(ACPlanner):
 				loss = loss.detach()
 				if(self.experiment_dict["enable_asm"] and epoch==0):
 					if(self.experiment_dict["feasible_training"]):
-						loss = loss*feasible-(1-feasible)
+						loss = loss*feasible-(1-feasible)*self.experiment_dict["infeasible_penalty"]
 					done = [False]
 					infos = [{}]
 					recurrent_hidden_states = opt_cuda(torch.tensor([]))

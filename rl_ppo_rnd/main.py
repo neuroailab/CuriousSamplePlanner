@@ -14,7 +14,7 @@ from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.storage import RolloutStorage
 from gym import spaces
 from CuriousSamplePlanner.scripts.utils import *
-from CuriousSamplePlanner.trainers.architectures import WorldModel
+from CuriousSamplePlanner.trainers.architectures import WorldModel, DynamicsModel, ConvWorldModel
 
 import pickle
 import shutil
@@ -34,8 +34,8 @@ def main():
 		"world_model_losses": [],
 		"num_sampled_nodes": 0,
 		"exp_id": exp_id,
-		"task": "FiveBlocks",
-		"num_training_epochs": 5,
+		"task": "ThreeBlocks",
+		"wm_epochs": 5,
 		'batch_size': 128,
 		"algo": "ppo",
 		'lr': 7e-4,
@@ -51,7 +51,7 @@ def main():
 		'detailed_gmp': False,
 		'seed': 1,
 		'cuda_deterministic':False,
-		'num_processes':1,
+		'num_processes': 1,
 		'num_steps': 128,
 		"learning_rate": 5e-5,
 		'ppo_epoch': 4,
@@ -60,19 +60,20 @@ def main():
 		'log_interval': 10,
 		'save_interval': 100,
 		'eval_interval': None,
-		'num_env_steps': 10e6,
+		'num_env_steps': 1e7,
+		'terminate_unreachable': True,
 		'log_dir': '/tmp/gym/',
 		'nsamples_per_update': 1024,
-		'mode': 'EffectPredictionPlanner',
+		'mode': 'RandomStateEmbeddingPlanner',
 		'training': True, 
 		'save_dir': './trained_models/',
 		'store_true':False,
 		'use_proper_time_limits': False,
-		'reset_frequency': 2e-4,
+		'reset_frequency': 0,
 		'recurrent_policy': False,
 		'use_linear_lr_decay': False
 	}
-	experiment_dict['exp_path'] = "/mnt/fs0/arc11_2/pybullet_examples/" + experiment_dict["exp_id"]
+	experiment_dict['exp_path'] = "solution_data/" + experiment_dict["exp_id"]
 
 	if (os.path.isdir(experiment_dict['exp_path'])):
 		shutil.rmtree(experiment_dict['exp_path'])
@@ -85,38 +86,24 @@ def main():
 		torch.backends.cudnn.benchmark = False
 		torch.backends.cudnn.deterministic = True
 
-
-
 	torch.set_num_threads(1)
 	# device = torch.device("cuda:"+str(int(0)))
 
 	PC = getattr(sys.modules[__name__], experiment_dict['task'])
-	print("hello?")
 	env = PC(experiment_dict)
 
 	action_low = -1
 	action_high = 1
 
-
-
-
-	## Set up the world model for RND operations
-	worldModelTarget = opt_cuda(WorldModel(config_size=env.config_size))
-
-	def weights_init_uniform(m):
-		classname = m.__class__.__name__            
-		# apply a uniform distribution to the weights and a bias=0
-		if classname.find('Linear') != -1:
-			m.weight.data.uniform_(0.0, 0.02)
-			m.bias.data.fill_(0)
-
-	worldModelTarget.apply(weights_init_uniform)
-	for param in worldModelTarget.parameters():
-		param.requires_grad = False
+	# Build models
 	worldModel = opt_cuda(WorldModel(config_size=env.config_size))
-	criterion = nn.MSELoss()
-	optimizer = optim.Adam(worldModel.parameters(), lr=experiment_dict["learning_rate"])
+	estimationModel = opt_cuda(ConvWorldModel(config_size=env.config_size, num_perspectives=len(env.perspectives)))
+	dynamicsModel = opt_cuda(DynamicsModel(config_size=env.config_size, action_size = env.action_space_size))
 
+	criterion = nn.MSELoss()
+	rnd_optimizer = optim.Adam(worldModel.parameters(), lr=experiment_dict["learning_rate"])
+	se_optimizer = optim.Adam(estimationModel.parameters(), lr=experiment_dict["learning_rate"])
+	ep_optimizer = optim.Adam(dynamicsModel.parameters(), lr=experiment_dict["learning_rate"])
 
 	actor_critic = Policy([env.config_size], env.action_space, base_kwargs={'recurrent': experiment_dict["recurrent_policy"]})
 
@@ -153,6 +140,8 @@ def main():
 							  actor_critic.recurrent_hidden_state_size)
 
 	obs = env.reset()
+	transform = list(env.predict_mask)
+	random.shuffle(transform)
 	reset_obs = obs
 	rollouts.obs[0].copy_(obs)
 	# rollouts.to(device)
@@ -165,7 +154,6 @@ def main():
 	num_updates = int(
 		experiment_dict["num_env_steps"]) // experiment_dict["num_steps"] // experiment_dict["num_processes"]
 	for j in range(num_updates):
-
 		if experiment_dict['use_linear_lr_decay']:
 			# decrease learning rate linearly
 			utils.update_linear_schedule(
@@ -174,7 +162,6 @@ def main():
 
 		for step in range(experiment_dict['num_steps']):
 			if(random.uniform(0,1) < experiment_dict['reset_frequency']):
-				print("RESET")
 				env.set_state(reset_obs[0])
 			experiment_dict['num_sampled_nodes']+=1
 			# Sample actions
@@ -184,21 +171,31 @@ def main():
 					rollouts.masks[step])
 
 			# action = torch.clamp(action, action_low, action_high)
-			obs, reward, done, infos = env.step(action)
+			obs, reward, done, infos, inputs, prestate = env.step(action, terminate_unreachable=experiment_dict['terminate_unreachable'], \
+																		  state_estimation=(experiment_dict["mode"]=="StateEstimationPlanner"))
 
 			obs_tensor = opt_cuda(obs.type(torch.FloatTensor))
+			inputs = opt_cuda(inputs.type(torch.FloatTensor))
+			preobs_tensor = opt_cuda(prestate.type(torch.FloatTensor))
+			if(experiment_dict["mode"] == "RandomStateEmbeddingPlanner"):
+				reward = torch.nn.functional.mse_loss(obs_tensor[:, transform], worldModel(obs_tensor)[:, env.predict_mask]).detach()
+			elif(experiment_dict["mode"] == "EffectPredictionPlanner"):
+				action = opt_cuda(action.type(torch.FloatTensor))
+				reward = torch.nn.functional.mse_loss(dynamicsModel(preobs_tensor, action)[:, env.predict_mask], obs_tensor[:, env.predict_mask]).detach() 
+			elif(experiment_dict["mode"] == "StateEstimationPlanner"):
+				reward = torch.nn.functional.mse_loss(estimationModel(inputs)[:, env.predict_mask], obs_tensor[:, env.predict_mask]).detach() 
 
-			reward = torch.nn.functional.mse_loss(worldModelTarget(obs_tensor), worldModel(obs_tensor)).detach()
 			# Insert into buffer for world model training
 			targets = opt_cuda(obs)
 			filler = opt_cuda(torch.tensor([0]))
-			experience_replay.bufferadd_single(filler, torch.squeeze(targets), filler, filler, filler, filler, filler)
+			experience_replay.bufferadd_single(torch.squeeze(inputs), torch.squeeze(targets), torch.squeeze(prestate), torch.squeeze(action), filler, filler, filler, filler, filler)
 
 			# Inserted for single-task experimentation
 			if(done[0]):
 				stats_filehandler = open(experiment_dict['exp_path'] + "/stats.pkl", 'wb')
 				pickle.dump(experiment_dict, stats_filehandler)
 				time.sleep(5)
+				print("Found solution")
 				exit(1)
 
 			for info in infos:
@@ -231,23 +228,35 @@ def main():
 
 
 		# Update world model
-		for epoch in range(experiment_dict['num_training_epochs']):
+		for epoch in range(experiment_dict['wm_epochs']):
 			for next_loaded in enumerate(DataLoader(experience_replay, batch_size=experiment_dict['batch_size'], shuffle=True, num_workers=0)):
-				optimizer.zero_grad()
+				
 				_, batch = next_loaded
-				inputs, labels, prestates, _, _, _, _, index = batch
-				outputs = opt_cuda(worldModel(opt_cuda(labels.type(torch.FloatTensor))))
+				inputs, labels, prestates, actions, _, _, _, _, index = batch
 				#outputs_target = opt_cuda(self.worldModelTarget(labels).type(torch.FloatTensor))
-				outputs_target=opt_cuda(worldModelTarget(opt_cuda(labels.type(torch.FloatTensor))))
+				labels = opt_cuda(labels.type(torch.FloatTensor))
+				actions = opt_cuda(actions.type(torch.FloatTensor))
+				prestates = opt_cuda(prestates.type(torch.FloatTensor))
+				if(experiment_dict["mode"] == "RandomStateEmbeddingPlanner"):
+					rnd_optimizer.zero_grad()
+					outputs = opt_cuda(worldModel(opt_cuda(labels.type(torch.FloatTensor))))
+					loss = criterion(outputs[:, env.predict_mask], labels[:, transform])
+					loss.backward()
+					rnd_optimizer.step()
+				elif(experiment_dict["mode"] == "EffectPredictionPlanner"):
+					ep_optimizer.zero_grad()
+					loss = criterion(dynamicsModel(prestates, actions)[:, env.predict_mask] , labels[:, env.predict_mask])
+					loss.backward()
+					ep_optimizer.step()
+				elif(experiment_dict["mode"] == "StateEstimationPlanner"):
+					se_optimizer.zero_grad()
+					loss = criterion(estimationModel(inputs)[:, env.predict_mask] , labels[:, env.predict_mask])
+					se_optimizer.step()
 
-				loss = criterion(outputs[:, env.predict_mask],
-									 outputs_target[:, env.predict_mask])
-				loss.backward()
+
 				experiment_dict["world_model_losses"].append(loss.item())
-				optimizer.step()
 
 
-		print(j)
 		del experience_replay
 		experience_replay = ExperienceReplayBuffer()
 		# print(episode_rewards)

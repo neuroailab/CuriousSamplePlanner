@@ -44,7 +44,8 @@ from CuriousSamplePlanner.tasks.state import State
 class ThreeBlocks(Environment):
 	def __init__(self, *args):
 		super(ThreeBlocks, self).__init__(*args)
-		connect(use_gui=False)
+
+		connect(use_gui=True)
 
 		if(self.detailed_gmp):
 			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
@@ -56,9 +57,9 @@ class ThreeBlocks(Environment):
 
 		# Set up objects
 		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
-		self.green_block = p.loadURDF("models/box_green.urdf", useFixedBase=False)
-		self.red_block = p.loadURDF("models/box_red.urdf", useFixedBase=False)
-		self.blue_block = p.loadURDF("models/box_blue.urdf", useFixedBase=False)
+		self.green_block = p.loadURDF("models/box_obj/green_box.urdf", useFixedBase=False)
+		self.red_block = p.loadURDF("models/box_obj/red_box.urdf", useFixedBase=False)
+		self.blue_block = p.loadURDF("models/box_obj/blue_box.urdf", useFixedBase=False)
 
 		self.objects = [self.green_block, self.red_block, self.blue_block]
 		self.static_objects = []
@@ -119,6 +120,31 @@ class ThreeBlocks(Environment):
 
 		# Format into a config vector
 		return np.concatenate([gpos, geuler, rpos, reuler, ypos, yeuler]+[self.macroaction.link_status])
+
+	def get_current_detailed_config(self):
+		# Get the object states
+		gpos, gquat = p.getBasePositionAndOrientation(self.green_block, physicsClientId=0)
+		rpos, rquat  = p.getBasePositionAndOrientation(self.red_block, physicsClientId=0)
+		ypos, yquat = p.getBasePositionAndOrientation(self.blue_block, physicsClientId=0)
+
+		g_linear_vel, g_angular_velocity = p.getBaseVelocity(self.green_block, physicsClientId=0)
+		r_linear_vel, r_angular_velocity = p.getBaseVelocity(self.red_block, physicsClientId=0)
+		y_linear_vel, y_angular_velocity = p.getBaseVelocity(self.red_block, physicsClientId=0)
+
+		# Convert quat to euler
+		geuler = p.getEulerFromQuaternion(gquat)
+		reuler = p.getEulerFromQuaternion(rquat)
+		yeuler = p.getEulerFromQuaternion(yquat)
+
+		# Format into a config vector
+		
+		return {
+			"object_1": np.concatenate([gpos, gquat, geuler, g_linear_vel, g_angular_velocity]),
+			"object_2": np.concatenate([rpos, rquat, reuler, r_linear_vel, r_angular_velocity]),
+			"object_3": np.concatenate([ypos, yquat, yeuler, y_linear_vel, y_angular_velocity])
+		}
+
+
 
 	def get_start_state(self):
 		collision = True

@@ -40,7 +40,9 @@ from CuriousSamplePlanner.scripts.utils import *
 
 class MacroAction():
 	def __init__(self, macroaction_list=[], *args):
-		self.reachable_max = 0.8
+		self.reachable_max_height = 0.8
+		self.max_reach_horiz = 0.7
+		self.min_reach_horiz = 0.4
 		self.macroaction_list = macroaction_list
 		self.link_status = []
 		self.links = []
@@ -59,14 +61,23 @@ class MacroAction():
 		return sum([macro.num_selectors+macro.num_params for macro in self.macroaction_list])
 
 	def reparameterize(self, block_to_move, pos):
-		r = reparameterize(pos[1].item(), 0.4, 0.7)
-		height = reparameterize(pos[2].item(), 0.1, self.reachable_max)
+		r = reparameterize(pos[1].item(), self.min_reach_horiz, self.max_reach_horiz)
+		height = reparameterize(pos[2].item(), 0.1, self.reachable_max_height)
 		theta = reparameterize(pos[0].item(), -math.pi, math.pi)
 		yaw = reparameterize(pos[3].item(), -math.pi, math.pi)
 		_, orig_quat = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
 		orig_euler = p.getEulerFromQuaternion(orig_quat)
 		teleport_pose = Pose(Point(x = r*math.cos(theta), y = r*math.sin(theta), z=min(height, 1)), Euler(roll=orig_euler[0], pitch=orig_euler[1], yaw=yaw))
 		return teleport_pose
+
+	def object_unreachable(self, obj):
+		margin = 0.1
+		obj_pose = get_pose(obj)
+		obj_pos = obj_pose[0]
+		distance = math.sqrt(obj_pos[0]**2+obj_pos[1]**2)
+		if(distance>(self.max_reach_horiz+margin) or distance<(self.min_reach_horiz-margin)):
+			return True
+		return False
 
 	def execute(self, embedding, config, sim=False):
 
@@ -164,7 +175,7 @@ class PickPlace(MacroAction):
 
 		# Rough feasibility check
 		pos, _ = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
-		if(math.sqrt((pos[0]**2+pos[1]**2)) > self.reachable_max+0.15):
+		if(math.sqrt((pos[0]**2+pos[1]**2)) > self.reachable_max_height+0.15):
 			return (None, False)
 
 		# Quick bookend collision checking

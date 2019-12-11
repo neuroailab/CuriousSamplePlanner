@@ -246,18 +246,25 @@ class Environment():
                goal_config, goal_prestate, goal_parent, goal_action, goal_command, commands
 
     # Special Gym wrappers
-    def step(self, action):
+    def step(self, action, terminate_unreachable=False, state_estimation=False):
         _ = self.take_action(action)
         reward = -0.2
         done = False
+        pre_stable_state = self.get_current_config()
         self.run_until_stable(dt=0)
         time.sleep(0.01)
         post_stable_state = self.get_current_config()
+        if(terminate_unreachable and any([self.macroaction.object_unreachable(obj) for obj in self.objects])):
+            print("Block is out of reach. Planning will never complete.")
+            sys.exit(1)
         if(self.check_goal_state(post_stable_state)):
             reward = 1.0
             done = True
-
-        return opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0)), opt_cuda(torch.unsqueeze(torch.tensor(reward), 0)), [done], [{"episode": {"r": reward}}] 
+        if(state_estimation):
+            inputs = torch.unsqueeze(torch.cat([torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0, 1) for yaw, pit in self.perspectives]), dim=0)
+        else:
+            inputs = opt_cuda(torch.tensor([0]))
+        return opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0)), opt_cuda(torch.unsqueeze(torch.tensor(reward), 0)), [done], [{"episode": {"r": reward}}], inputs, opt_cuda(torch.unsqueeze(torch.tensor(pre_stable_state), 0)) 
 
     def reset(self):
         start_config = self.get_start_state()

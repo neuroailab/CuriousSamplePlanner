@@ -293,12 +293,14 @@ class Environment:
         if self.check_goal_state(post_stable_state):
             reward = 1.0
             done = True
+            self.num_steps = 0
         self.num_steps += 1
 
         # return opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0)), opt_cuda(torch.unsqueeze(torch.tensor(reward), 0)), [done], [{"episode": {"r": reward}}]
         return self.get_current_config(), reward, done, {}
 
     def reset(self):
+        self.num_steps = 0
         start_config = self.get_start_state()
         self.set_state(start_config)
         for _ in range(5):

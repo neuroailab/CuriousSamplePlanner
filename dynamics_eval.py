@@ -75,8 +75,10 @@ def save_curious_path_images(args):
 
     env = envs.Torch(env)
 
-    obj_factored = True
+    # obj_factored = True
     # obj_factored = False
+    obj_factored = 'factored' in args.dynamics_path
+
     if not obj_factored:
         print('Using standard dynamics model')
         dynamics = DynamicsModel(config_size=env.config_size, action_size=env.action_space_size)

@@ -49,6 +49,7 @@ class Environment:
             self.image_based = True
 
         self.arm_size=1
+        self.dart = experiment_dict['dart'] if experiment_dict.get('dart') is not None else False
 
     def config_state_attrs(self, linking=False):
         self.state = State(len(self.objects), len(self.static_objects),len(self.macroaction.link_status))
@@ -65,6 +66,10 @@ class Environment:
 
     def take_action(self, action):
         # Get the macroaction that is being executed
+        if self.dart:
+            dart_std = 0.5
+            dart_noise = torch.randn_like(action) * dart_std
+            action += dart_noise
         action = action[0].detach().cpu().numpy()
         config = self.get_current_config()
         if self.asm_enabled:

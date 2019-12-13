@@ -51,6 +51,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "feasibility":[],
         "num_sampled_nodes": 0,
         "num_graph_nodes": 0,
+        "dart": True,
     }
 
     experiment_dict['exp_path'] = "./solution_data/" + experiment_dict["exp_id"]

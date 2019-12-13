@@ -52,7 +52,6 @@ class Environment:
         self.arm_size=1
         self.dynamics_path = experiment_dict['dynamics_path']
         self.num_steps = 0
-        self.dart = experiment_dict['dart'] if experiment_dict.get('dart') is not None else False
 
 
     def config_state_attrs(self, linking=False):
@@ -218,11 +217,6 @@ class Environment:
             with torch.no_grad():
                 config = self.dynamics.forward(opt_cuda(torch.tensor(preconfig).float()).unsqueeze(0), opt_cuda(action).float())
             config = config[0].detach().cpu().numpy()
-
-            if self.dart:
-                dart_std = 0.5
-                dart_noise = torch.randn_like(action) * dart_std
-                action += dart_noise
 
             action = action[0].detach().cpu().numpy()
 

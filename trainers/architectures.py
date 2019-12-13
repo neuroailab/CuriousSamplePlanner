@@ -14,14 +14,7 @@ import imageio
 import pickle
 import collections
 import sys
-
-from CuriousSamplePlanner.tasks.three_block_stack import ThreeBlocks
-
-from CuriousSamplePlanner.tasks.ball_ramp import BallRamp
-from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
-from CuriousSamplePlanner.tasks.bookshelf import BookShelf
 from CuriousSamplePlanner.scripts.utils import *
-
 import torch
 from torch import nn
 import torch.optim as optim
@@ -56,6 +49,16 @@ class WorldModel(nn.Module):
 		super(WorldModel, self).__init__()
 		hidden = 128
 		self.mlp = nn.Sequential(nn.Linear(config_size, hidden), nn.ReLU(), nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, config_size))
+
+	def forward(self, config):
+		l = self.mlp(config)
+		return l
+
+class PolicyModel(nn.Module):
+	def __init__(self, config_size=9, action_size=0):
+		super(PolicyModel, self).__init__()
+		hidden = 64
+		self.mlp = nn.Sequential(nn.Linear(config_size, hidden), nn.ReLU(), nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, action_size))
 
 	def forward(self, config):
 		l = self.mlp(config)

@@ -45,7 +45,7 @@ class ThreeBlocks(Environment):
 	def __init__(self, *args):
 		super(ThreeBlocks, self).__init__(*args)
 
-		connect(use_gui=True)
+		connect(use_gui=False)
 
 		if(self.detailed_gmp):
 			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
@@ -98,12 +98,12 @@ class ThreeBlocks(Environment):
 		vals.sort()
 
 		# Two stack
-		# if( (vals[0] > 0.06) or (vals[1] > 0.06) or (vals[2] > 0.06)):
-		# 	return True
+		if( (vals[0] > 0.06) or (vals[1] > 0.06) or (vals[2] > 0.06)):
+			return True
 
 		# Three stack
-		if(vals[0]<0.06 and (vals[1] < 0.16 and vals[1] > 0.06) and (vals[2] > 0.16)):
-			return True
+		# if(vals[0]<0.06 and (vals[1] < 0.16 and vals[1] > 0.06) and (vals[2] > 0.16)):
+		# 	return True
 		return False
 
 

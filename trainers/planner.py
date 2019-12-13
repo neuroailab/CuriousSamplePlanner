@@ -11,21 +11,21 @@ import os
 import shutil
 import h5py
 import imageio
-from planning_pybullet.pybullet_tools.kuka_primitives import BodyPose, BodyConf, Command, get_grasp_gen, \
+from CuriousSamplePlanner.planning_pybullet.pybullet_tools.kuka_primitives import BodyPose, BodyConf, Command, get_grasp_gen, \
 	get_ik_fn, get_free_motion_gen, get_holding_motion_gen
-from planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
+from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
 	Pose, Point, Euler, set_default_camera, stable_z, \
 	BLOCK_URDF, load_model, wait_for_user, disconnect, DRAKE_IIWA_URDF, user_input, update_state, disable_real_time,inverse_kinematics,end_effector_from_body,approach_from_grasp, get_joints, get_joint_positions
 
 
-from planning_pybullet.pybullet_tools.utils import get_pose, set_pose, get_movable_joints, \
+from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import get_pose, set_pose, get_movable_joints, \
 	set_joint_positions, add_fixed_constraint, enable_real_time, disable_real_time, joint_controller, \
 	enable_gravity, get_refine_fn, user_input, wait_for_duration, link_from_name, get_body_name, sample_placement, \
 	end_effector_from_body, approach_from_grasp, plan_joint_motion, GraspInfo, Pose, INF, Point, \
 	inverse_kinematics, pairwise_collision, remove_fixed_constraint, Attachment, get_sample_fn, \
 	step_simulation, refine_path, plan_direct_joint_motion, get_joint_positions, dump_world, get_link_pose,control_joints
 
-from planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach
+from CuriousSamplePlanner.planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach
 import pickle
 import torch
 from torch import nn
@@ -94,12 +94,13 @@ class Planner():
 			if(goal is not None):
 				self.environment.set_state(goal)
 				for perspective in self.environment.perspectives:
+					picture, _, _ = take_picture(perspective[0], perspective[1], 0, size=512)
 					imageio.imwrite(self.exp_path
 									+ '/GOAL'
 									+ ',run_index=' + str(run_index)
 									+ ',parent_index=' + str(goal_parent)
 									+ ',node_key=' + str(self.graph.node_key) + '.jpg',
-									take_picture(perspective[0], perspective[1], 0, size=512))
+									picture)
 
 				
 				goal_node = self.graph.add_node(goal, goal_prestate, goal_action, goal_parent, command=goal_command)

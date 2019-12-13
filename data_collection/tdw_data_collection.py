@@ -63,7 +63,7 @@ env = PC(experiment_dict)
 obj_file = open("models/box_obj/tinker.obj","r")
 obj_mesh = obj_file.read()
 
-f = h5py.File('HRN_Data.hdf5', 'w')
+f = h5py.File('/mnt/fs0/arc11_2/HRN_Data.hdf5', 'w')
 picture, view_matrix, projection_matrix = take_picture(45, -45, 0, size=2048)
 f["camera_view_matrix"] = view_matrix
 f["camera_projection_matrix"] = projection_matrix
@@ -72,7 +72,7 @@ f["object_2"] = obj_mesh
 f["object_3"] = obj_mesh
 
 record_index = 0
-for record_index in range(100):
+for record_index in range(10000):
 	if(record_index%100 == 0):
 		print("Record Index: "+str(record_index))
 	obs = env.reset()

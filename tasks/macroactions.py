@@ -56,6 +56,7 @@ class MacroAction():
 		self.robot = arm
 		for m in self.macroaction_list:
 			m.robot = arm
+
 	@property
 	def action_space_size(self):
 		return sum([macro.num_selectors+macro.num_params for macro in self.macroaction_list])
@@ -98,10 +99,8 @@ class MacroAction():
 		if(isinstance(self.macroaction_list[macroaction_index], PickPlace)):
 			# Need to do some extra preprocessing to account for links
 			# If there is a link, we need to transport objects at the same time with the same dynamics to avoid explosion
-			mask_start = total_selectors+sum([self.macroaction_list[macro_idx].num_params for macro_idx in range(macroaction_index)])
-			mask_end = mask_start+self.macroaction_list[macroaction_index].num_params
 			# First, get the block to move
-			object_index = np.argmax(embedding[mask_start:mask_start+len(self.objects)], axis=0)
+			object_index = np.argmax(embedding[0:len(self.objects)], axis=0)
 			block_to_move = self.objects[int(object_index)]
 
 			# Then, get all of the blocks connected to the block_to_move
@@ -112,14 +111,13 @@ class MacroAction():
 					connected_blocks.append(self.objects[block_index])
 
 			# Then we need to get the goal pose of the moving object
-			start_index = len(self.objects)+sum([self.macroaction_list[macroaction_index].object_params[i] for i in range(object_index)])
+			start_index = len(self.objects)
 			end_index = start_index+self.macroaction_list[macroaction_index].object_params[object_index]
-			pos = embedding[mask_start+start_index: mask_start+end_index]
+			pos = embedding[start_index: end_index]
 			teleport_pose = self.reparameterize(block_to_move, pos)
 
 			# Now we need to perform forward dynamics on the connected objects
 			for connected_block in connected_blocks:
-				print("MOVING CONNECTED BLOCK")
 				b1pos, b1quat = p.getBasePositionAndOrientation(block_to_move)
 				b1e = p.getEulerFromQuaternion(b1quat)
 				b2pos, b2quat = p.getBasePositionAndOrientation(connected_block)
@@ -161,7 +159,7 @@ class PickPlace(MacroAction):
 	
 	@property
 	def num_params(self):
-		return len(self.objects) + len(self.objects)*4
+		return 4
 
 	@property
 	def num_selectors(self):

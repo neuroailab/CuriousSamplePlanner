@@ -11,7 +11,7 @@ import os
 import shutil
 import h5py
 import imageio
-from planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach
+from CuriousSamplePlanner.planning_pybullet.pybullet_tools.kuka_primitives import BodyPath, Attach, Detach
 import pickle
 import collections
 from motion_planners.discrete import astar
@@ -89,14 +89,12 @@ class PlanGraph(Dataset):
 		config, preconfig, action = node.get_batch_data()
 		self.environment.set_state(config)
 		p.stepSimulation()
-		img_arr = torch.cat([opt_cuda(torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0 ,1)) for yaw, pit in self.environment.perspectives])
+		img_arr = torch.cat([opt_cuda(torch.tensor(take_picture(yaw, pit, 0)[0]).type(torch.FloatTensor).permute(2, 0 ,1)) for yaw, pit in self.environment.perspectives])
 		return img_arr, config, preconfig, node.node_key, index, action
-
 
 	def set_novelty_scores(self, index, losses):
 		for loss_index, node_index in enumerate(index):
 			list(self.plan_graph.keys())[node_index+1].set_novelty_score(losses[loss_index].item())
-
 
 	def add_node(self, conf, preconf, action, parent_index, command=None):
 		parent = self.find_node(parent_index)
@@ -109,7 +107,6 @@ class PlanGraph(Dataset):
 		return new_node
 
 	def is_node(self, conf):
-
 		for node in list(self.plan_graph.keys()):
 			if(node.conf_equals(conf)):
 				return True

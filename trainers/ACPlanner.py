@@ -91,12 +91,13 @@ class ACPlanner(Planner):
 				if (not self.graph.is_node(ntarget)):
 					self.environment.set_state(ntarget)
 					for perspective in self.environment.perspectives:
+						picture, _, _ = take_picture(perspective[0], perspective[1], 0, size=512)
 						imageio.imwrite(self.exp_path
 										+ '/run_index=' + str(run_index)
 										+ ',index=' + str(en_index)
 										+ ',parent_index=' + str(int(parent_index.item()))
 										+ ',node_index=' + str(self.graph.node_key) + '.jpg',
-										take_picture(perspective[0], perspective[1], 0, size=512))
+										picture)
 					self.graph.add_node(ntarget, npretarget, action.cpu().numpy(), torch.squeeze(parent_index).item(), command = command)
 					added_base_count += 1
 				if (added_base_count == self.growth_factor):

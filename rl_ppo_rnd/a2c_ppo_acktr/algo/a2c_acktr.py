@@ -31,6 +31,7 @@ class A2C_ACKTR():
                 actor_critic.parameters(), lr, eps=eps, alpha=alpha)
 
     def update(self, rollouts):
+
         obs_shape = rollouts.obs.size()[2:]
         action_shape = rollouts.actions.size()[-1]
         num_steps, num_processes, _ = rollouts.rewards.size()
@@ -44,14 +45,23 @@ class A2C_ACKTR():
 
         values = values.view(num_steps, num_processes, 1)
         action_log_probs = action_log_probs.view(num_steps, num_processes, 1)
-
+        # print(rollouts.returns[:-1])
+        # print(values)
         advantages = rollouts.returns[:-1] - values
+        # print(rollouts.obs[:-1][:, 0, 0]+rollouts.obs[:-1][:,0,1]+rollouts.obs[:-1][:,0,6]+rollouts.obs[:-1][:,0,7]+rollouts.obs[:-1][:,0,12]+rollouts.obs[:-1][:,0,13])
         # print(rollouts.obs[:-1])
+        # print(rollouts.actions)
+
         # print(rollouts.returns[:-1])
         # print(values)
         value_loss = advantages.pow(2).mean()
         # print(value_loss)
+        # print(advantages)
         action_loss = -(advantages.detach() * action_log_probs).mean()
+
+        # print(value_loss)
+        # print(action_loss)
+        # print("----------")
 
         if self.acktr and self.optimizer.steps % self.optimizer.Ts == 0:
             # Sampled fisher, see Martens 2014

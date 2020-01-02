@@ -61,15 +61,24 @@ class MacroAction():
 	def action_space_size(self):
 		return sum([macro.num_selectors+macro.num_params for macro in self.macroaction_list])
 
+	# def reparameterize(self, block_to_move, pos):
+	# 	r = reparameterize(pos[1].item(), self.min_reach_horiz, self.max_reach_horiz)
+	# 	height = reparameterize(pos[2].item(), 0.1, self.reachable_max_height)
+	# 	theta = reparameterize(pos[0].item(), -math.pi, math.pi)
+	# 	yaw = reparameterize(pos[3].item(), -math.pi, math.pi)
+	# 	_, orig_quat = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
+	# 	orig_euler = p.getEulerFromQuaternion(orig_quat)
+	# 	teleport_pose = Pose(Point(x = r*math.cos(theta), y = r*math.sin(theta), z=min(height, 1)), Euler(roll=orig_euler[0], pitch=orig_euler[1], yaw=yaw))
+	# 	return teleport_pose
+
 	def reparameterize(self, block_to_move, pos):
-		r = reparameterize(pos[1].item(), self.min_reach_horiz, self.max_reach_horiz)
-		height = reparameterize(pos[2].item(), 0.1, self.reachable_max_height)
-		theta = reparameterize(pos[0].item(), -math.pi, math.pi)
-		yaw = reparameterize(pos[3].item(), -math.pi, math.pi)
 		_, orig_quat = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
+		height = reparameterize(pos[2].item(), 0.1, self.reachable_max_height)
+
 		orig_euler = p.getEulerFromQuaternion(orig_quat)
-		teleport_pose = Pose(Point(x = r*math.cos(theta), y = r*math.sin(theta), z=min(height, 1)), Euler(roll=orig_euler[0], pitch=orig_euler[1], yaw=yaw))
-		return teleport_pose
+		teleport_pose = Pose(Point(x = pos[0], y = pos[1], z=height), Euler(roll=orig_euler[0], pitch=orig_euler[1], yaw=pos[3]))
+		return teleport_pose			
+
 
 	def object_unreachable(self, obj):
 		margin = 0.1
@@ -172,25 +181,25 @@ class PickPlace(MacroAction):
 		"""
 
 		# Rough feasibility check
-		pos, _ = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
-		if(math.sqrt((pos[0]**2+pos[1]**2)) > self.reachable_max_height+0.15):
-			return (None, False)
+		# pos, _ = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
+		# if(math.sqrt((pos[0]**2+pos[1]**2)) > self.reachable_max_height+0.15):
+		# 	return (None, False)
 
-		# Quick bookend collision checking
-		notcs = [i for i in self.objects if i not in [block_to_move]]
-		saved_world = WorldSaver()
-		for notc in notcs:
-			contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
-			if(len(contact) > 0):
-				if(contact[0][5][2]>pos[2]):
-					return (None, False)
+		# # Quick bookend collision checking
+		# notcs = [i for i in self.objects if i not in [block_to_move]]
+		# saved_world = WorldSaver()
+		# for notc in notcs:
+		# 	contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
+		# 	if(len(contact) > 0):
+		# 		if(contact[0][5][2]>pos[2]):
+		# 			return (None, False)
 
-		set_pose(block_to_move, goal_pose)
-		for notc in notcs:
-			contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
-			if(len(contact)>0):
-				return (None, False)
-		saved_world.restore()
+		# set_pose(block_to_move, goal_pose)
+		# for notc in notcs:
+		# 	contact = p.getClosestPoints(bodyA=block_to_move, bodyB=notc, distance=0, physicsClientId=0)
+		# 	if(len(contact)>0):
+		# 		return (None, False)
+		# saved_world.restore()
 
 		if(not self.gmp and not sim):
 			return (None, True)

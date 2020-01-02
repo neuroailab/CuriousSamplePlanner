@@ -23,7 +23,6 @@ from CuriousSamplePlanner.tasks.five_block_stack import FiveBlocks
 from CuriousSamplePlanner.tasks.ball_ramp import BallRamp
 from CuriousSamplePlanner.tasks.bookshelf import BookShelf
 from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
-
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
 
 import sys
@@ -35,10 +34,9 @@ def main():
 		"num_sampled_nodes": 0,
 		"exp_id": exp_id,
 		"task": "ThreeBlocks",
-		"wm_epochs": 5,
 		'batch_size': 128,
 		"algo": "a2c",
-		'lr': 7e-5,
+		'lr': 7e-4,
 		'eps': 1e-5,
 		'alpha': 0.99,
 		'gamma': 0.9,
@@ -49,18 +47,19 @@ def main():
 		'recurrent_policy': True,
 		'enable_asm': False,
 		'detailed_gmp': False,
-		'seed': 1,
+		'seed': time.time(),
 		'cuda_deterministic':False,
 		'num_processes': 1,
-		'num_steps': 1,
-		"learning_rate": 5e-5,
+		'num_steps': 5,
 		'ppo_epoch': 4,
-		'num_mini_batch': 32,
+		'num_mini_batch': 5,
 		'clip_param': 0.2, 
 		'log_interval': 10,
 		'save_interval': 100,
 		'eval_interval': None,
 		'num_env_steps': 1e7,
+		'use_splitter': True,
+		'split_ratio': 0.2,
 		'terminate_unreachable': False,
 		'log_dir': '/tmp/gym/',
 		'nsamples_per_update': 1024,
@@ -71,7 +70,8 @@ def main():
 		'use_proper_time_limits': False,
 		'reset_frequency': 0.01,
 		'recurrent_policy': False,
-		'use_linear_lr_decay': False
+		'use_linear_lr_decay': False,
+		'rewards': []
 	}
 	experiment_dict['exp_path'] = "solution_data/" + experiment_dict["exp_id"]
 
@@ -125,7 +125,9 @@ def main():
 
 	rollouts = RolloutStorage(experiment_dict["num_steps"], 1,
 							  [env.config_size], env.action_space,
-							  actor_critic.recurrent_hidden_state_size)
+							  actor_critic.recurrent_hidden_state_size,
+							  use_splitter = experiment_dict["use_splitter"],
+							  split_ratio = experiment_dict["split_ratio"])
 
 	obs = env.reset()
 	transform = list(env.predict_mask)
@@ -138,9 +140,12 @@ def main():
 	# Create the replay buffer for training world models
 
 	start = time.time()
+	no_reward_frame_count = 0
+	MAX_NRFC = 100
 	num_updates = int(
 		experiment_dict["num_env_steps"]) // experiment_dict["num_steps"] // experiment_dict["num_processes"]
 	for j in range(num_updates):
+		class_index = 0
 		for step in range(experiment_dict['num_steps']):
 			experiment_dict['num_sampled_nodes']+=1
 			# Sample actions
@@ -150,18 +155,33 @@ def main():
 					rollouts.masks[step])
 
 			# action = torch.clamp(action, action_low, action_high)
-			obs, reward, done, infos, inputs, prestate = env.step(action, terminate_unreachable=experiment_dict['terminate_unreachable'], \
+	
+			# print(action)
+			# new_action = torch.tensor(np.ones(action.shape))
+			# new_action[0][random.randint(0,2)] = 2
+			# print(new_action)
+			obs, reward, done, infos, inputs, prestate = env.step(action/4.0, terminate_unreachable=experiment_dict['terminate_unreachable'], \
 																		  state_estimation=(experiment_dict["mode"]=="StateEstimationPlanner"))
 
-			reward = torch.tensor(obs[0][0].item()+obs[0][1].item()+obs[0][6].item()+obs[0][7].item()+obs[0][12].item()+obs[0][13].item())
-			if(reward.item() == 1):
-				env.reset()
+			
+			# reward = torch.tensor(obs[0][0].item()+obs[0][1].item()+obs[0][6].item()+obs[0][7].item()+obs[0][12].item()+obs[0][13].item())
+			experiment_dict['rewards'].append(reward.item())
+
+			if(reward.item() == 1 or no_reward_frame_count >= MAX_NRFC):
+				if(reward.item() == 1):
+					class_index = 1
+					reward = reward*10
+				no_reward_frame_count = 0
+				obs = env.reset()
+
+			
+			no_reward_frame_count += 1 
+
 			obs_tensor = opt_cuda(obs.type(torch.FloatTensor))
 			inputs = opt_cuda(inputs.type(torch.FloatTensor))
 			preobs_tensor = opt_cuda(prestate.type(torch.FloatTensor))
 
 			# Insert into buffer for world model training
-			targets = opt_cuda(obs)
 			filler = opt_cuda(torch.tensor([0]))
 
 			for info in infos:
@@ -180,8 +200,6 @@ def main():
 			rollouts.insert(obs, recurrent_hidden_states, action,
 							action_log_prob, value, reward, masks, bad_masks)
 
-
-
 		with torch.no_grad():
 			next_value = actor_critic.get_value(
 				rollouts.obs[-1], rollouts.recurrent_hidden_states[-1],
@@ -191,12 +209,8 @@ def main():
 		rollouts.compute_returns(next_value, experiment_dict["use_gae"], experiment_dict["gamma"],
 								 0, experiment_dict["use_proper_time_limits"])
 
-		# print(rollouts.rewards)
-		# print(rollouts.returns)
-		# print(rollouts.obs)
-
+		rollouts.before_update(class_index)
 		value_loss, action_loss, dist_entropy = agent.update(rollouts)
-
 		rollouts.after_update()
 
 
@@ -212,6 +226,9 @@ def main():
 						np.median(episode_rewards), np.min(episode_rewards),
 						np.max(episode_rewards), dist_entropy, value_loss,
 						action_loss))
+		if j % experiment_dict['save_interval'] == 0 and len(episode_rewards) > 1:
+			with open(experiment_dict['exp_path'] + "/exp_dict.pkl", "wb") as fa:
+				pickle.dump(experiment_dict, fa)
 
 		# if (args.eval_interval is not None and len(episode_rewards) > 1
 		#         and j % args.eval_interval == 0):

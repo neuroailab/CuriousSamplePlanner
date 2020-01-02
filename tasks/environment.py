@@ -259,7 +259,7 @@ class Environment():
             sys.exit(1)
         if(self.check_goal_state(post_stable_state)):
             reward = 1.0
-            done = True
+            
         if(state_estimation):
             inputs = torch.unsqueeze(torch.cat([torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0, 1) for yaw, pit in self.perspectives]), dim=0)
         else:

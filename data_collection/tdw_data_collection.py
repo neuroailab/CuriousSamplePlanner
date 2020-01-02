@@ -63,7 +63,7 @@ env = PC(experiment_dict)
 obj_file = open("models/box_obj/tinker.obj","r")
 obj_mesh = obj_file.read()
 
-f = h5py.File('/mnt/fs0/arc11_2/HRN_Data.hdf5', 'w')
+f = h5py.File('/mnt/fs0/arc11_2/HRN_Data_2.hdf5', 'w')
 picture, view_matrix, projection_matrix = take_picture(45, -45, 0, size=2048)
 f["camera_view_matrix"] = view_matrix
 f["camera_projection_matrix"] = projection_matrix

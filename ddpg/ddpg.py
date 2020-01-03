@@ -5,6 +5,8 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.autograd import Variable
 import torch.nn.functional as F
+from CuriousSamplePlanner.scripts.utils import *
+
 
 def soft_update(target, source, tau):
     for target_param, param in zip(target.parameters(), source.parameters()):
@@ -134,9 +136,18 @@ class DDPG(object):
         mu = mu.data
 
         if action_noise is not None:
-            mu += torch.Tensor(action_noise.noise())
+            mu += opt_cuda(torch.Tensor(action_noise.noise()))
 
         return mu.clamp(-1, 1)
+
+
+    def cuda(self):
+        self.actor = opt_cuda(self.actor)
+        self.actor_target = opt_cuda(self.actor_target)
+        self.actor_perturbed = opt_cuda(self.actor_perturbed)
+        self.critic = opt_cuda(self.critic)
+        self.critic_target = opt_cuda(self.critic_target)
+
 
 
     def update_parameters(self, batch):
@@ -146,8 +157,8 @@ class DDPG(object):
         mask_batch = Variable(torch.cat(batch.mask))
         next_state_batch = Variable(torch.cat(batch.next_state))
         
-        next_action_batch = self.actor_target(next_state_batch)
-        next_state_action_values = self.critic_target(next_state_batch, next_action_batch)
+        next_action_batch = self.actor_target(opt_cuda(next_state_batch.type(torch.FloatTensor)))
+        next_state_action_values = self.critic_target(opt_cuda(next_state_batch.type(torch.FloatTensor)), opt_cuda(next_action_batch.type(torch.FloatTensor)))
 
         reward_batch = reward_batch.unsqueeze(1)
         mask_batch = mask_batch.unsqueeze(1)

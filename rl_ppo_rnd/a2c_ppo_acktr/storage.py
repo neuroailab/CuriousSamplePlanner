@@ -7,6 +7,9 @@ import numpy as np
 def _flatten_helper(T, N, _tensor):
     return _tensor.view(T * N, *_tensor.size()[2:])
 
+
+
+# DO NOT USE -- DOESN'T WORK
 class ReplayBuffer(object):
     def __init__(self, num_classes=2, sizes = [100, 100]):
         self.buffers = [[] for _ in range(num_classes)]
@@ -18,10 +21,7 @@ class ReplayBuffer(object):
             choice = np.random.choice(np.arange(0, len(self.buffers)), p=[1-split_ratio, split_ratio])
             if(len(self.buffers[choice])>0):
                 empty = False 
-        # return random.choice(self.buffers[0])
 
-        items = self.buffers[choice][-1]
-        print(items[5])
         return self.buffers[choice][-1]
 
     def add_to_replay_buffer(self, items, class_index):

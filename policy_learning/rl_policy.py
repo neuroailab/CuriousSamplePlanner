@@ -226,6 +226,7 @@ def main():
 						np.median(episode_rewards), np.min(episode_rewards),
 						np.max(episode_rewards), dist_entropy, value_loss,
 						action_loss))
+			
 		if j % experiment_dict['save_interval'] == 0 and len(episode_rewards) > 1:
 			with open(experiment_dict['exp_path'] + "/exp_dict.pkl", "wb") as fa:
 				pickle.dump(experiment_dict, fa)

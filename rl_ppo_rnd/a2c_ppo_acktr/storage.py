@@ -18,10 +18,19 @@ class ReplayBuffer(object):
             choice = np.random.choice(np.arange(0, len(self.buffers)), p=[1-split_ratio, split_ratio])
             if(len(self.buffers[choice])>0):
                 empty = False 
-        return random.choice(self.buffers[choice])
+        # return random.choice(self.buffers[0])
+
+        items = self.buffers[choice][-1]
+        print(items[5])
+        return self.buffers[choice][-1]
 
     def add_to_replay_buffer(self, items, class_index):
+ 
+
         self.buffers[class_index].append(items)
+        # if(class_index == 1):
+        #     print([d[5] for d in self.buffers[1]])
+
         if(len(self.buffers[class_index])>self.sizes[class_index]):
             del self.buffers[class_index][0]
 
@@ -34,8 +43,7 @@ class RolloutStorage(object):
         self.split_ratio = split_ratio
         self.replay_buffer = ReplayBuffer()
         self.obs = torch.zeros(num_steps + 1, num_processes, *obs_shape)
-        self.recurrent_hidden_states = torch.zeros(
-            num_steps + 1, num_processes, recurrent_hidden_state_size)
+        self.recurrent_hidden_states = torch.zeros(num_steps + 1, num_processes, recurrent_hidden_state_size)
         self.rewards = torch.zeros(num_steps, num_processes, 1)
         self.value_preds = torch.zeros(num_steps + 1, num_processes, 1)
         self.returns = torch.zeros(num_steps + 1, num_processes, 1)
@@ -63,25 +71,29 @@ class RolloutStorage(object):
 
     def insert(self, obs, recurrent_hidden_states, actions, action_log_probs,
                value_preds, rewards, masks, bad_masks):
-
         self.obs[self.step + 1].copy_(obs)
-        self.recurrent_hidden_states[self.step +
-                                     1].copy_(recurrent_hidden_states)
+        self.recurrent_hidden_states[self.step + 1].copy_(recurrent_hidden_states)
         self.actions[self.step].copy_(actions)
         self.action_log_probs[self.step].copy_(action_log_probs)
         self.value_preds[self.step].copy_(value_preds)
         self.rewards[self.step].copy_(rewards)
         self.masks[self.step + 1].copy_(masks)
-
         self.bad_masks[self.step + 1].copy_(bad_masks)
-
         self.step = (self.step + 1) % self.num_steps
 
     def send_to_replay_buffer(self, class_index):
-        self.replay_buffer.add_to_replay_buffer((self.obs, self.recurrent_hidden_states, self.actions, self.action_log_probs, self.value_preds, self.rewards, self.masks, self.bad_masks), class_index)
+        self.replay_buffer.add_to_replay_buffer((self.obs.clone(), self.recurrent_hidden_states.clone(), self.actions.clone(), self.action_log_probs.clone(), self.value_preds.clone(), self.rewards.clone(), self.masks.clone(), self.bad_masks.clone()), class_index)
 
     def load_from_replay_buffer(self, split_ratio):
-        (self.obs, self.recurrent_hidden_states, self.actions, self.action_log_probs, self.value_preds, self.rewards, self.masks, self.bad_masks) = self.replay_buffer.get_item(split_ratio)
+        (obs, recurrent_hidden_states, actions, action_log_probs, value_preds, rewards, masks, bad_masks) = self.replay_buffer.get_item(split_ratio)
+        self.obs = obs.clone()
+        self.recurrent_hidden_states = recurrent_hidden_states.clone()
+        self.actions = actions.clone()
+        self.action_log_probs = action_log_probs.clone()
+        self.value_preds = value_preds.clone()
+        self.rewards = rewards.clone()
+        self.masks = masks.clone()
+        self.bad_masks = bad_masks.clone()
 
     def before_update(self, class_index):
         if(self.use_splitter):

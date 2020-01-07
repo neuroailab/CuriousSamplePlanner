@@ -31,12 +31,13 @@ from CuriousSamplePlanner.ddpg.normalized_actions import NormalizedActions
 from CuriousSamplePlanner.ddpg.ounoise import OUNoise
 from CuriousSamplePlanner.ddpg.param_noise import AdaptiveParamNoiseSpec, ddpg_distance_metric
 from CuriousSamplePlanner.ddpg.balanced_replay_memory import BalancedReplayMemory, Transition
-from CuriousSamplePlanner.ddpg.balanced_replay_memory import ReplayMemory
+from CuriousSamplePlanner.ddpg.replay_memory import ReplayMemory
 
 import sys
 
 def main():
 	exp_id = str(sys.argv[1])
+	
 	experiment_dict = {
 		"world_model_losses": [],
 		"num_sampled_nodes": 0,
@@ -44,8 +45,8 @@ def main():
 		"task": "ThreeBlocks",
 		'batch_size': 128,
 		"algo": "a2c",
-		'actor_lr': 7e-4,
-		'critic_lr': 7e-4,
+		'actor_lr': 1e-5,
+		'critic_lr': 1e-4,
 		'eps': 1e-5,
 		'num_episodes': 100000,
 		'tau': 0.001,
@@ -56,21 +57,20 @@ def main():
 		'final_noise_scale': 0.05,
 		'exploration_end': 100,
 		'seed': 4,
-		'updates_per_step': 5,
+		'updates_per_step': 1,
 		'use_gae': False,
 		'enable_asm': False,
 		'detailed_gmp': False,
 		'seed': time.time(),
-		'cuda_deterministic':False,
+		'cuda_deterministic': False,
 		'num_processes': 1,
-		'hidden_size': 128,
-		'num_mini_batch': 5,
+		'hidden_size': 64,
 		'log_interval': 100,
 		'save_interval': 100,
 		'eval_interval': None,
 		'num_env_steps': 1e7,
 		'use_splitter': False, # Can't use splitter on ppo or a2c because they are on-policy algorithms
-		'split': 0.2,
+		'split': 0.5,
 		'terminate_unreachable': False,
 		'log_dir': '/tmp/gym/',
 		'nsamples_per_update': 1024,
@@ -112,12 +112,13 @@ def main():
 	action_high = 1
 	updates = 0
 
-	agent = DDPG(experiment_dict['gamma'], experiment_dict['tau'], experiment_dict['hidden_size'], env.config_size, env.action_space)
+	agent = DDPG(experiment_dict['gamma'], experiment_dict['tau'], experiment_dict['hidden_size'], env.config_size, env.action_space, actor_lr = experiment_dict['actor_lr'], critic_lr = experiment_dict["critic_lr"])
 	agent.cuda()
 	if(experiment_dict['use_splitter']):
 		memory = BalancedReplayMemory(experiment_dict['replay_size'], split=experiment_dict["split"])
 	else:
 		memory = ReplayMemory(experiment_dict['replay_size'])
+
 	ounoise = OUNoise(env.action_space.shape[0]) if experiment_dict['ou_noise'] else None
 	param_noise = AdaptiveParamNoiseSpec(initial_stddev=0.05, desired_action_stddev=experiment_dict['noise_scale'], adaptation_coefficient=1.05) if experiment_dict['param_noise'] else None
 	obs = env.reset()

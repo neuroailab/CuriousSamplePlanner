@@ -37,7 +37,6 @@ import sys
 from CuriousSamplePlanner.tasks.environment import Environment
 from CuriousSamplePlanner.scripts.utils import *
 
-
 class MacroAction():
 	def __init__(self, macroaction_list=[], *args):
 		self.reachable_max_height = 0.8
@@ -51,7 +50,6 @@ class MacroAction():
 			self.links += [None for _ in range(macroaction.num_links)]
 			self.objects = macroaction.objects
 
-
 	def add_arm(self, arm):
 		self.robot = arm
 		for m in self.macroaction_list:
@@ -61,23 +59,23 @@ class MacroAction():
 	def action_space_size(self):
 		return sum([macro.num_selectors+macro.num_params for macro in self.macroaction_list])
 
-	# def reparameterize(self, block_to_move, pos):
-	# 	r = reparameterize(pos[1].item(), self.min_reach_horiz, self.max_reach_horiz)
-	# 	height = reparameterize(pos[2].item(), 0.1, self.reachable_max_height)
-	# 	theta = reparameterize(pos[0].item(), -math.pi, math.pi)
-	# 	yaw = reparameterize(pos[3].item(), -math.pi, math.pi)
-	# 	_, orig_quat = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
-	# 	orig_euler = p.getEulerFromQuaternion(orig_quat)
-	# 	teleport_pose = Pose(Point(x = r*math.cos(theta), y = r*math.sin(theta), z=min(height, 1)), Euler(roll=orig_euler[0], pitch=orig_euler[1], yaw=yaw))
-	# 	return teleport_pose
-
 	def reparameterize(self, block_to_move, pos):
-		_, orig_quat = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
+		r = reparameterize(pos[1].item(), self.min_reach_horiz, self.max_reach_horiz)
 		height = reparameterize(pos[2].item(), 0.1, self.reachable_max_height)
-
+		theta = reparameterize(pos[0].item(), -math.pi, math.pi)
+		yaw = reparameterize(pos[3].item(), -math.pi, math.pi)
+		_, orig_quat = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
 		orig_euler = p.getEulerFromQuaternion(orig_quat)
-		teleport_pose = Pose(Point(x = pos[0], y = pos[1], z=height), Euler(roll=orig_euler[0], pitch=orig_euler[1], yaw=pos[3]))
-		return teleport_pose			
+		teleport_pose = Pose(Point(x = r*math.cos(theta), y = r*math.sin(theta), z=min(height, 1)), Euler(roll=orig_euler[0], pitch=orig_euler[1], yaw=yaw))
+		return teleport_pose
+
+	# def reparameterize(self, block_to_move, pos):
+	# 	_, orig_quat = p.getBasePositionAndOrientation(block_to_move, physicsClientId=0)
+	# 	height = reparameterize(pos[2].item(), 0.1, self.reachable_max_height)
+
+	# 	orig_euler = p.getEulerFromQuaternion(orig_quat)
+	# 	teleport_pose = Pose(Point(x = pos[0], y = pos[1], z=height), Euler(roll=orig_euler[0], pitch=orig_euler[1], yaw=pos[3]))
+	# 	return teleport_pose			
 
 
 	def object_unreachable(self, obj):

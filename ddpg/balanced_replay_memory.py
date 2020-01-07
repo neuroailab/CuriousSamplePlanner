@@ -11,7 +11,7 @@ Transition = namedtuple(
 
 class BalancedReplayMemory(object):
 
-    def __init__(self, capacity, num_classes = 2, split=0.2)
+    def __init__(self, capacity, num_classes = 2, split=0.2):
         self.capacity = capacity
         self.split = split
         self.memory_banks = [[] for _ in range(num_classes)]

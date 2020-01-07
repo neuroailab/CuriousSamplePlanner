@@ -104,19 +104,22 @@ class Critic(nn.Module):
         return V
 
 class DDPG(object):
-    def __init__(self, gamma, tau, hidden_size, num_inputs, action_space):
+    def __init__(self, gamma, tau, hidden_size, num_inputs, action_space, actor_lr = 1e-4, critic_lr = 1e-3):
 
         self.num_inputs = num_inputs
         self.action_space = action_space
 
+        self.actor_lr = actor_lr
+        self.critic_lr = critic_lr
+        
         self.actor = Actor(hidden_size, self.num_inputs, self.action_space)
         self.actor_target = Actor(hidden_size, self.num_inputs, self.action_space)
         self.actor_perturbed = Actor(hidden_size, self.num_inputs, self.action_space)
-        self.actor_optim = Adam(self.actor.parameters(), lr=1e-4)
+        self.actor_optim = Adam(self.actor.parameters(), lr=self.actor_lr)
 
         self.critic = Critic(hidden_size, self.num_inputs, self.action_space)
         self.critic_target = Critic(hidden_size, self.num_inputs, self.action_space)
-        self.critic_optim = Adam(self.critic.parameters(), lr=1e-3)
+        self.critic_optim = Adam(self.critic.parameters(), lr=self.critic_lr)
 
         self.gamma = gamma
         self.tau = tau

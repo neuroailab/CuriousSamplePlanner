@@ -45,7 +45,7 @@ class ThreeBlocks(Environment):
 	def __init__(self, *args):
 		super(ThreeBlocks, self).__init__(*args)
 
-		connect(use_gui=True)
+		connect(use_gui=False)
 
 		if(self.detailed_gmp):
 			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF

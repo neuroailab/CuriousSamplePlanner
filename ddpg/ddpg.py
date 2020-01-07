@@ -193,7 +193,7 @@ class DDPG(object):
             if 'ln' in name: 
                 pass 
             param = params[name]
-            param += torch.randn(param.shape) * param_noise.current_stddev
+            param += opt_cuda(torch.randn(param.shape)) * param_noise.current_stddev
 
     def save_model(self, env_name, suffix="", actor_path=None, critic_path=None):
         if not os.path.exists('models/'):

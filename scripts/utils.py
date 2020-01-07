@@ -5,7 +5,6 @@ import time
 import random
 import math
 import imageio
-import matplotlib.pyplot as plt
 import os
 import shutil
 import h5py
@@ -36,8 +35,6 @@ def opt_cuda(t):
 		for argv in sys.argv:
 			if(argv.isdigit()):
 				cuda="cuda:"+str(sys.argv[2])
-
-			
 		return t.cuda(cuda)
 	else:
 		return t

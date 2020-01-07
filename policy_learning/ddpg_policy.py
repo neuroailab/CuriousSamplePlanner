@@ -30,7 +30,8 @@ from CuriousSamplePlanner.ddpg.naf import NAF
 from CuriousSamplePlanner.ddpg.normalized_actions import NormalizedActions
 from CuriousSamplePlanner.ddpg.ounoise import OUNoise
 from CuriousSamplePlanner.ddpg.param_noise import AdaptiveParamNoiseSpec, ddpg_distance_metric
-from CuriousSamplePlanner.ddpg.replay_memory import ReplayMemory, Transition
+from CuriousSamplePlanner.ddpg.balanced_replay_memory import BalancedReplayMemory, Transition
+from CuriousSamplePlanner.ddpg.balanced_replay_memory import ReplayMemory
 
 import sys
 
@@ -43,38 +44,33 @@ def main():
 		"task": "ThreeBlocks",
 		'batch_size': 128,
 		"algo": "a2c",
-		'lr': 7e-4,
+		'actor_lr': 7e-4,
+		'critic_lr': 7e-4,
 		'eps': 1e-5,
 		'num_episodes': 100000,
 		'tau': 0.001,
-		'gamma': 0.90,
+		'gamma': 0.9,
 		'ou_noise': True,
 		'param_noise': False,
 		'noise_scale': 0.3,
-		'final_noise_scale': 0.3,
+		'final_noise_scale': 0.05,
 		'exploration_end': 100,
 		'seed': 4,
 		'updates_per_step': 5,
 		'use_gae': False,
-		'entropy_coef': 0,
-		'value_loss_coef': 0.5,
-		'max_grad_norm': 0.5,
-		'recurrent_policy': True,
 		'enable_asm': False,
 		'detailed_gmp': False,
 		'seed': time.time(),
 		'cuda_deterministic':False,
 		'num_processes': 1,
-		'num_steps': 5,
 		'hidden_size': 128,
 		'num_mini_batch': 5,
-		'clip_param': 0.2, 
 		'log_interval': 100,
 		'save_interval': 100,
 		'eval_interval': None,
 		'num_env_steps': 1e7,
 		'use_splitter': False, # Can't use splitter on ppo or a2c because they are on-policy algorithms
-		'split_ratio': 0.05,
+		'split': 0.2,
 		'terminate_unreachable': False,
 		'log_dir': '/tmp/gym/',
 		'nsamples_per_update': 1024,
@@ -84,9 +80,8 @@ def main():
 		'store_true':False,
 		'use_proper_time_limits': False,
 		'reset_frequency': 0.01,
-		'recurrent_policy': False,
 		'use_linear_lr_decay': False,
-		'replay_size': 1000,
+		'replay_size': 100000,
 		'rewards': []
 	}
 	rewards = []
@@ -119,7 +114,10 @@ def main():
 
 	agent = DDPG(experiment_dict['gamma'], experiment_dict['tau'], experiment_dict['hidden_size'], env.config_size, env.action_space)
 	agent.cuda()
-	memory = ReplayMemory(experiment_dict['replay_size'])
+	if(experiment_dict['use_splitter']):
+		memory = BalancedReplayMemory(experiment_dict['replay_size'], split=experiment_dict["split"])
+	else:
+		memory = ReplayMemory(experiment_dict['replay_size'])
 	ounoise = OUNoise(env.action_space.shape[0]) if experiment_dict['ou_noise'] else None
 	param_noise = AdaptiveParamNoiseSpec(initial_stddev=0.05, desired_action_stddev=experiment_dict['noise_scale'], adaptation_coefficient=1.05) if experiment_dict['param_noise'] else None
 	obs = env.reset()
@@ -133,7 +131,6 @@ def main():
 	start = time.time()
 	no_reward_frame_count = 0
 	MAX_NRFC = 100
-	num_updates = int(experiment_dict["num_env_steps"]) // experiment_dict["num_steps"] // experiment_dict["num_processes"]
 
 
 	for i_episode in range(experiment_dict['num_episodes']):
@@ -157,7 +154,10 @@ def main():
 			reward = opt_cuda(torch.Tensor([reward]))
 			experiment_dict['rewards'].append(reward.item())
 
-			memory.push(state, action, mask, next_state, reward)
+			if(experiment_dict['use_splitter']):
+				memory.push(int(reward.item() == 1), state, action, mask, next_state, reward)
+			else:
+				memory.push(state, action, mask, next_state, reward)
 
 			state = opt_cuda(next_state.type(torch.FloatTensor))
 			if len(memory) > experiment_dict['batch_size']:
@@ -172,27 +172,23 @@ def main():
 				with open(experiment_dict['exp_path'] + "/exp_dict.pkl", "wb") as fa:
 					pickle.dump(experiment_dict, fa)
 
-
 			if total_numsteps % experiment_dict['log_interval'] == 0:
 				print("Episode: "+str(i_episode)+", total numsteps: "+str(total_numsteps)+", average reward: "+str(np.mean(np.array(experiment_dict['rewards'][-100:]))))
 		
-			if done[0] or traj_length >= 10:
+			if done[0] or traj_length >= 20:
 				break
 
 			traj_length+=1
 		
 		# Update param_noise based on distance metric
-		if experiment_dict['param_noise']:
-			episode_transitions = memory.memory[memory.position-t:memory.position]
+		if experiment_dict['param_noise'] and len(memory) >= experiment_dict['batch_size']:
+			episode_transitions = memory.memory[memory.position-experiment_dict['batch_size']:memory.position]
 			states = torch.cat([transition[0] for transition in episode_transitions], 0)
 			unperturbed_actions = agent.select_action(states, None, None)
 			perturbed_actions = torch.cat([transition[1] for transition in episode_transitions], 0)
 
-			ddpg_dist = ddpg_distance_metric(perturbed_actions.numpy(), unperturbed_actions.numpy())
+			ddpg_dist = ddpg_distance_metric(perturbed_actions.detach().cpu().numpy(), unperturbed_actions.detach().cpu().numpy())
 			param_noise.adapt(ddpg_dist)
-
-
-
 
 
 if __name__ == "__main__":

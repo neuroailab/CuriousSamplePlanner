@@ -26,10 +26,9 @@ from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.trainers.planner import Planner
 from CuriousSamplePlanner.trainers.architectures import DynamicsModel
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
-from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
 
 
-class EffectPredictionPlanner(ACPlanner):
+class EffectPredictionPlanner(Planner):
 	def __init__(self, *args):
 		super(EffectPredictionPlanner, self).__init__(*args)
 		self.worldModel = opt_cuda(DynamicsModel(config_size=self.environment.config_size, action_size = self.environment.action_space_size))

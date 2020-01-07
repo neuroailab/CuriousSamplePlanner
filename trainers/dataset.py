@@ -29,15 +29,13 @@ class ExperienceReplayBuffer(Dataset):
 		self.parents = []
 		self.actions = []
 		self.pretarget_buffer = []
-		self.action_log_probs = []
 		self.feasible = []
-		self.values = []
 		self.commands = []
 		
 	def __len__(self):
 		return len(self.buffer)
 
-	def bufferadd_single(self, item, target, pretarget, actions, action_log_probs, values, feasible, parent, command):  
+	def bufferadd_single(self, item, target, pretarget, actions, feasible, parent, command):  
 		self.buffer.append(item)
 		self.target_buffer.append(target)
 		self.pretarget_buffer.append(pretarget)
@@ -48,15 +46,13 @@ class ExperienceReplayBuffer(Dataset):
 		self.values.append(values)
 		self.commands.append(command)
 
-	def bufferadd(self, item, target, pretarget, actions, action_log_probs, values, feasible, parent, command):
+	def bufferadd(self, item, target, pretarget, actions, feasible, parent, command):
 		for i in range(target.shape[0]):
 			self.buffer.append(item[i, :])
 			self.target_buffer.append(target[i, :])
 			self.pretarget_buffer.append(pretarget[i, :])
 			self.actions.append(actions[i, :])
 			self.parents.append(parent[i, :])
-			self.action_log_probs.append(action_log_probs[i, :])
-			self.values.append(values[i, :])
 			self.feasible.append(feasible[i, :])
 			self.commands.append(command[i])
 
@@ -64,4 +60,4 @@ class ExperienceReplayBuffer(Dataset):
 		return self.commands[index]
 		
 	def __getitem__(self, index):
-		return self.buffer[index], self.target_buffer[index], self.pretarget_buffer[index], self.actions[index], self.action_log_probs[index], self.values[index], self.feasible[index], self.parents[index], torch.tensor(index)
+		return self.buffer[index], self.target_buffer[index], self.pretarget_buffer[index], self.actions[index], self.feasible[index], self.parents[index], torch.tensor(index)

@@ -41,7 +41,7 @@ class MacroAction():
 	def __init__(self, macroaction_list=[], *args):
 		self.reachable_max_height = 0.8
 		self.max_reach_horiz = 0.7
-		self.min_reach_horiz = 0.4
+		self.min_reach_horiz = 0.6
 		self.macroaction_list = macroaction_list
 		self.link_status = []
 		self.links = []

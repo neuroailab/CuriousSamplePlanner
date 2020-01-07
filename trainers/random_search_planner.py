@@ -23,10 +23,9 @@ from CuriousSamplePlanner.tasks.bookshelf import BookShelf
 from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.trainers.planner import Planner
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
-from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
 
 
-class RandomSearchPlanner(ACPlanner):
+class RandomSearchPlanner(Planner):
 	def __init__(self, *args):
 	   super(RandomSearchPlanner, self).__init__(*args)
 

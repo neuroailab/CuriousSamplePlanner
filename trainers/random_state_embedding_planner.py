@@ -27,10 +27,9 @@ from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.trainers.planner import Planner
 from CuriousSamplePlanner.trainers.architectures import WorldModel, SkinnyWorldModel
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
-from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
 
 
-class RandomStateEmbeddingPlanner(ACPlanner):
+class RandomStateEmbeddingPlanner(Planner):
 	def __init__(self, *args):
 		super(RandomStateEmbeddingPlanner, self).__init__(*args)
 		self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))

@@ -25,6 +25,7 @@ from CuriousSamplePlanner.tasks.bookshelf import BookShelf
 from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
 
+# RL-Related Imports
 from CuriousSamplePlanner.ddpg.ddpg import DDPG
 from CuriousSamplePlanner.ddpg.naf import NAF
 from CuriousSamplePlanner.ddpg.normalized_actions import NormalizedActions
@@ -44,9 +45,8 @@ def main():
 		"exp_id": exp_id,
 		"task": "ThreeBlocks",
 		'batch_size': 128,
-		"algo": "a2c",
-		'actor_lr': 1e-5,
-		'critic_lr': 1e-4,
+		'actor_lr': 1e-4,
+		'critic_lr': 1e-3,
 		'eps': 1e-5,
 		'num_episodes': 100000,
 		'tau': 0.001,
@@ -69,7 +69,7 @@ def main():
 		'save_interval': 100,
 		'eval_interval': None,
 		'num_env_steps': 1e7,
-		'use_splitter': False, # Can't use splitter on ppo or a2c because they are on-policy algorithms
+		'use_splitter': True, # Can't use splitter on ppo or a2c because they are on-policy algorithms
 		'split': 0.5,
 		'terminate_unreachable': False,
 		'log_dir': '/tmp/gym/',
@@ -112,6 +112,7 @@ def main():
 	action_high = 1
 	updates = 0
 
+
 	agent = DDPG(experiment_dict['gamma'], experiment_dict['tau'], experiment_dict['hidden_size'], env.config_size, env.action_space, actor_lr = experiment_dict['actor_lr'], critic_lr = experiment_dict["critic_lr"])
 	agent.cuda()
 	if(experiment_dict['use_splitter']):
@@ -122,13 +123,9 @@ def main():
 	ounoise = OUNoise(env.action_space.shape[0]) if experiment_dict['ou_noise'] else None
 	param_noise = AdaptiveParamNoiseSpec(initial_stddev=0.05, desired_action_stddev=experiment_dict['noise_scale'], adaptation_coefficient=1.05) if experiment_dict['param_noise'] else None
 	obs = env.reset()
-	transform = list(env.predict_mask)
-	random.shuffle(transform)
-	reset_obs = obs
 	total_numsteps = 0
 	episode_rewards = deque(maxlen=1000)
 	# Create the replay buffer for training world models
-
 	start = time.time()
 	no_reward_frame_count = 0
 	MAX_NRFC = 100
@@ -146,7 +143,7 @@ def main():
 		traj_length = 0
 		while True:
 			action = agent.select_action(state, ounoise, param_noise)
-			next_state, reward, done, infos, inputs, prestate = env.step(action/8.0)
+			next_state, reward, done, infos, inputs, prestate = env.step(action)
 
 			total_numsteps += 1
 			episode_reward += reward

@@ -29,10 +29,9 @@ from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.trainers.planner import Planner
 from CuriousSamplePlanner.trainers.architectures import ConvWorldModel
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
-from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
 
 
-class StateEstimationPlanner(ACPlanner):
+class StateEstimationPlanner(Planner):
 	def __init__(self, *args):
 		super(StateEstimationPlanner, self).__init__(*args)
 		self.worldModel = opt_cuda(ConvWorldModel(config_size=self.environment.config_size, num_perspectives=len(self.environment.perspectives)))

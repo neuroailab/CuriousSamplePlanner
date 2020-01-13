@@ -42,8 +42,6 @@ class ExperienceReplayBuffer(Dataset):
 		self.actions.append(actions)
 		self.parents.append(parent)
 		self.feasible.append(feasible)
-		self.action_log_probs.append(action_log_probs)
-		self.values.append(values)
 		self.commands.append(command)
 
 	def bufferadd(self, item, target, pretarget, actions, feasible, parent, command):

@@ -69,7 +69,7 @@ def main():
 		'save_interval': 100,
 		'eval_interval': None,
 		'num_env_steps': 1e7,
-		'use_splitter': True, # Can't use splitter on ppo or a2c because they are on-policy algorithms
+		'use_splitter': False, # Can't use splitter on ppo or a2c because they are on-policy algorithms
 		'split': 0.5,
 		'terminate_unreachable': False,
 		'log_dir': '/tmp/gym/',
@@ -112,7 +112,6 @@ def main():
 	action_high = 1
 	updates = 0
 
-
 	agent = DDPG(experiment_dict['gamma'], experiment_dict['tau'], experiment_dict['hidden_size'], env.config_size, env.action_space, actor_lr = experiment_dict['actor_lr'], critic_lr = experiment_dict["critic_lr"])
 	agent.cuda()
 	if(experiment_dict['use_splitter']):
@@ -124,7 +123,6 @@ def main():
 	param_noise = AdaptiveParamNoiseSpec(initial_stddev=0.05, desired_action_stddev=experiment_dict['noise_scale'], adaptation_coefficient=1.05) if experiment_dict['param_noise'] else None
 	obs = env.reset()
 	total_numsteps = 0
-	episode_rewards = deque(maxlen=1000)
 	# Create the replay buffer for training world models
 	start = time.time()
 	no_reward_frame_count = 0
@@ -139,14 +137,12 @@ def main():
 		if experiment_dict['param_noise']:
 			agent.perturb_actor_parameters(param_noise)
 
-		episode_reward = 0
 		traj_length = 0
 		while True:
 			action = agent.select_action(state, ounoise, param_noise)
-			next_state, reward, done, infos, inputs, prestate = env.step(action)
+			next_state, reward, done, infos, inputs, prestate, feasible, command = env.step(action)
 
 			total_numsteps += 1
-			episode_reward += reward
 			action = action
 			mask = opt_cuda(torch.Tensor([not done]))
 			reward = opt_cuda(torch.Tensor([reward]))

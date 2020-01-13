@@ -40,8 +40,8 @@ from CuriousSamplePlanner.scripts.utils import *
 class MacroAction():
 	def __init__(self, macroaction_list=[], *args):
 		self.reachable_max_height = 0.8
-		self.max_reach_horiz = 0.7
-		self.min_reach_horiz = 0.6
+		self.max_reach_horiz = 0.65
+		self.min_reach_horiz = 0.60
 		self.macroaction_list = macroaction_list
 		self.link_status = []
 		self.links = []
@@ -103,6 +103,7 @@ class MacroAction():
 
 
 		# Select out the nodes of the network responsible for that macroaction
+
 		if(isinstance(self.macroaction_list[macroaction_index], PickPlace)):
 			# Need to do some extra preprocessing to account for links
 			# If there is a link, we need to transport objects at the same time with the same dynamics to avoid explosion

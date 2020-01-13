@@ -16,7 +16,6 @@ from CuriousSamplePlanner.trainers.state_estimation_planner import StateEstimati
 from CuriousSamplePlanner.trainers.random_search_planner import RandomSearchPlanner
 from CuriousSamplePlanner.trainers.effect_prediction_planner import EffectPredictionPlanner
 from CuriousSamplePlanner.trainers.random_state_embedding_planner import RandomStateEmbeddingPlanner
-from CuriousSamplePlanner.trainers.ACPlanner import ACPlanner
 from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.agent.planning_agent import PlanningAgent
 
@@ -34,30 +33,49 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "learning_rate": 5e-5,  
         "sample_cap": 1e7, 
         "batch_size": 128,
+        'actor_lr': 1e-4,
+        'critic_lr': 1e-3,
+        'use_splitter': True, # Can't use splitter on ppo or a2c because they are on-policy algorithms
         "node_sampling": "softmax",
         "mode": "RandomStateEmbeddingPlanner",
         "feasible_training": True,
         "nsamples_per_update": 1024,
-        "training": True, 
+        "training": True,
+        'exploration_end': 100, 
         "exp_id": exp_id,
         "load_id": load_id,
+        'noise_scale': 1.0,
+        'final_noise_scale': 0.05,
         "enable_asm": False, 
         "growth_factor": 10,
         "detailed_gmp": False, 
         "adaptive_batch": True,
         "num_training_epochs": 30,
         "infeasible_penalty" : 0,
+        'tau': 0.001,
+        'hidden_size': 64,
+        'split': 0.5,
+        'gamma': 0.9,
+        'ou_noise': True,
+        'param_noise': False,
+        'updates_per_step': 1,
+        'replay_size': 100000,
         # Stats
         "world_model_losses": [],
         "feasibility":[],
+        "rewards": [],
         "num_sampled_nodes": 0,
         "num_graph_nodes": 0,
     }
 
-    experiment_dict['exp_path'] = "./solution_data/" + experiment_dict["exp_id"]
-    experiment_dict['load_path'] = "./solution_data/" + experiment_dict["load_id"]
-    if (not os.path.isdir("./solution_data")):
-        os.mkdir("./solution_data")
+
+    if(torch.cuda.is_available()):
+        prefix = "/mnt/fs0/arc11_2/solution_data/"
+    else:
+        prefix = "./solution_data/"
+
+    experiment_dict['exp_path'] = prefix + experiment_dict["exp_id"]
+    experiment_dict['load_path'] = prefix + experiment_dict["load_id"]
     #experiment_dict['exp_path'] = "example_images/" + experiment_dict["exp_id"]
     #experiment_dict['load_path'] = 'example_images/' + experiment_dict["load_id"]
     adaptive_batch_lr = {

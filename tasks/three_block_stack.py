@@ -45,7 +45,7 @@ class ThreeBlocks(Environment):
 	def __init__(self, *args):
 		super(ThreeBlocks, self).__init__(*args)
 
-		connect(use_gui=False)
+		connect(use_gui=True)
 
 		if(self.detailed_gmp):
 			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF
@@ -57,9 +57,9 @@ class ThreeBlocks(Environment):
 
 		# Set up objects
 		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
-		self.green_block = p.loadURDF("models/box_obj/green_box.urdf", useFixedBase=False)
-		self.red_block = p.loadURDF("models/box_obj/red_box.urdf", useFixedBase=False)
-		self.blue_block = p.loadURDF("models/box_obj/blue_box.urdf", useFixedBase=False)
+		self.green_block = p.loadURDF("models/box_green.urdf", useFixedBase=False)
+		self.red_block = p.loadURDF("models/box_red.urdf", useFixedBase=False)
+		self.blue_block = p.loadURDF("models/box_blue.urdf", useFixedBase=False)
 
 		self.objects = [self.green_block, self.red_block, self.blue_block]
 		self.static_objects = []

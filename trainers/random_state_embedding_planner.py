@@ -38,6 +38,11 @@ class RandomStateEmbeddingPlanner(Planner):
 		self.criterion = nn.MSELoss()
 		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
 
+	def reset_world_model(self):
+		self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))
+		self.criterion = nn.MSELoss()
+		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
+
 
 	def update_novelty_scores(self):
 		if(len(self.graph)>0 and self.experiment_dict["node_sampling"] == "softmax"):
@@ -55,16 +60,20 @@ class RandomStateEmbeddingPlanner(Planner):
 				
 	def save_params(self):
 		# Save the updated models
-		with open(self.exp_path + "/worldModel.pkl", 'wb') as fw:
-			pickle.dump(self.worldModel, fw)
-		with open(self.exp_path + "/actor_critic.pkl", "wb") as fa:
-			pickle.dump(self.environment.actor_critic, fa)
+		# with open(self.exp_path + "/worldModel.pkl", 'wb') as fw:
+		# 	pickle.dump(self.worldModel, fw)
+		# with open(self.exp_path + "/actor_critic.pkl", "wb") as fa:
+		# 	pickle.dump(self.environment.actor_critic, fa)
+		with open(self.exp_path + "/exp_dict.pkl", "wb") as fa:
+			pickle.dump(self.experiment_dict, fa)
+			fa.close()
 
 	def train_world_model(self, run_index):
 		for epoch in range(self.num_training_epochs):
 			for next_loaded in enumerate(DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
 				_, batch = next_loaded
-				inputs, labels, prestates, acts, acts_log_probs, values, feasible, _, index = batch
+				inputs, labels, prestates, acts, feasible, _, index = batch
+				labels = torch.squeeze(labels)
 				self.optimizer_world.zero_grad()
 				outputs = self.worldModel(labels)
 				targets = labels[:, self.transform]
@@ -90,15 +99,17 @@ class RandomStateEmbeddingPlanner(Planner):
 		whole_feasibles = []
 		for _, batch in enumerate(
 				DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
-			inputs, labels, prestates, acts, _, _, feasible, _, index = batch
+			inputs, labels, prestates, acts, feasible, _, index = batch
+			labels = torch.squeeze(labels)
 			targets = labels[:, self.transform]
 			outputs = self.worldModel(labels)
 			losses = []
 			for i in range(self.batch_size):
-				losses.append(torch.unsqueeze(
-					self.criterion(outputs[i, self.environment.predict_mask], targets[i,:]),
-					dim=0))
+				l = self.criterion(outputs[i, self.environment.predict_mask], targets[i,:])
+				
+				losses.append(torch.unsqueeze(l,dim=0))
 				whole_feasibles.append(feasible[i].item())
+
 
 			whole_losses += [l.item() for l in losses]
 			whole_indices += [l.item() for l in index]

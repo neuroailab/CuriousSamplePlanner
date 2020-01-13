@@ -67,18 +67,8 @@ class Environment():
         # Get the macroaction that is being executed
         action = action[0].detach().cpu().numpy()
         config = self.get_current_config()
-        if(self.asm_enabled):
-            with torch.no_grad():
-                obs =  opt_cuda(torch.tensor(self.get_current_config()).type(torch.FloatTensor))
-                value, policy_action, action_log_prob, recurrent_hidden_states = self.actor_critic.act(torch.unsqueeze(obs,0), opt_cuda(torch.tensor([])), 1)
-                m = torch.nn.Tanh()
-                policy_action = m(policy_action)
-                action = policy_action[0].detach().cpu().numpy()
-            feasible, command =  self.macroaction.execute(action, config)
-            return (action, action_log_prob, value,  int(feasible), command)
-        else:
-            feasible, command =  self.macroaction.execute(action, config)
-            return (action, opt_cuda(torch.tensor([0])), opt_cuda(torch.tensor([0])), int(feasible), command)
+        feasible, command =  self.macroaction.execute(action, config)
+        return (action, int(feasible), command)
 
 
     def remove_constraints(self):
@@ -247,7 +237,7 @@ class Environment():
 
     # Special Gym wrappers
     def step(self, action, terminate_unreachable=False, state_estimation=False):
-        _ = self.take_action(action)
+        _, feasible, command = self.take_action(action)
         reward = -0.2
         done = False
         pre_stable_state = self.get_current_config()
@@ -265,7 +255,9 @@ class Environment():
             inputs = torch.unsqueeze(torch.cat([torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0, 1) for yaw, pit in self.perspectives]), dim=0)
         else:
             inputs = opt_cuda(torch.tensor([0]))
-        return opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0)), opt_cuda(torch.unsqueeze(torch.tensor(reward), 0)), [done], [{"episode": {"r": reward}}], inputs, opt_cuda(torch.unsqueeze(torch.tensor(pre_stable_state), 0)) 
+
+       
+        return opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0)), opt_cuda(torch.unsqueeze(torch.tensor(reward), 0)), [done], [{"episode": {"r": reward}}], inputs, opt_cuda(torch.unsqueeze(torch.tensor(pre_stable_state), 0)), feasible, command 
 
     def reset(self):
         start_config = self.get_start_state()

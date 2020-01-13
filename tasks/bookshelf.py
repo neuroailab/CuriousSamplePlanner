@@ -144,7 +144,6 @@ class BookShelf(Environment):
 		booke = p.getEulerFromQuaternion(bookquat)
 
 		# print("getting config: "+str(int(self.current_constraint_id is not None)))
-
 		return np.array(list(b1pos+b1e+b2pos+b2e+bookpos+booke)+self.macroaction.link_status)
 
 	@property

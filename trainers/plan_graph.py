@@ -89,8 +89,8 @@ class PlanGraph(Dataset):
 		config, preconfig, action = node.get_batch_data()
 		self.environment.set_state(config)
 		p.stepSimulation()
-		img_arr = torch.cat([opt_cuda(torch.tensor(take_picture(yaw, pit, 0)[0]).type(torch.FloatTensor).permute(2, 0 ,1)) for yaw, pit in self.environment.perspectives])
-		return img_arr, config, preconfig, node.node_key, index, action
+		# img_arr = torch.cat([opt_cuda(torch.tensor(take_picture(yaw, pit, 0)[0]).type(torch.FloatTensor).permute(2, 0 ,1)) for yaw, pit in self.environment.perspectives])
+		return opt_cuda(torch.tensor([0])), config, preconfig, node.node_key, index, action
 
 	def set_novelty_scores(self, index, losses):
 		for loss_index, node_index in enumerate(index):

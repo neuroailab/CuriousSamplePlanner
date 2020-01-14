@@ -88,7 +88,7 @@ class Planner():
 			self.memory = ReplayMemory(experiment_dict['replay_size'])
 
 		self.ounoise = OUNoise(self.environment.action_space.shape[0]) if experiment_dict['ou_noise'] else None
-		self.param_noise = AdaptiveParamNoiseSpec(initial_stddev=0.05, desired_action_stddev=experiment_dict['noise_scale'], adaptation_coefficient=1.05) if experiment_dict['param_noise'] else None
+		self.param_noise = AdaptiveParamNoiseSpec(initial_stddev=20, desired_action_stddev=experiment_dict['noise_scale'], adaptation_coefficient=1.05) if experiment_dict['param_noise'] else None
 
 		# Init the plan graph 
 		self.graph = PlanGraph(environment=self.environment, node_sampling = self.node_sampling)
@@ -107,8 +107,7 @@ class Planner():
 
 		start_node = self.graph.add_node(start_state, None, None, None)
 
-		start_state = torch.unsqueeze(start_state, dim=0)
-
+		start_state = torch.unsqueeze(start_state, dim=0).type(torch.FloatTensor)
 		run_index = 0
 		total_numsteps = 0
 		feature = torch.zeros((1, 3, 84, 84))
@@ -120,14 +119,21 @@ class Planner():
 		while (True):
 			total_numsteps += 1
 			last_reward += 1
-			# State selection
+			# Parent State selection
 			parent = self.graph.expand_node(1)[0]
 			self.environment.set_state(parent.config)
-			# Get an action from the agent given the current state
 			parent_state = torch.unsqueeze(opt_cuda(torch.tensor(parent.config)), dim=0)
 			action = self.agent.select_action(parent_state, self.ounoise, self.param_noise)
-
 			next_state, reward, done, infos, inputs, prestate, feasible, command = self.environment.step(action)
+
+
+			# Current State selection
+			# parent = self.graph.expand_node(1)[0]
+			# # self.environment.set_state(parent.config)
+			# # Get an action from the agent given the current state
+			# # parent_state = torch.unsqueeze(start_state, dim=0)
+			# action = self.agent.select_action(torch.unsqueeze(opt_cuda(torch.tensor(parent.config)), dim=0), self.ounoise, self.param_noise)
+			# next_state, reward, done, infos, inputs, prestate, feasible, command = self.environment.step(action)
 
 			start_state = next_state
 			mask = opt_cuda(torch.Tensor([not done]))
@@ -148,6 +154,15 @@ class Planner():
 				ss = self.environment.reset().cpu().numpy()[0]
 				start_node = self.graph.add_node(ss, None, None, None)
 				self.reset_world_model()
+
+				if self.experiment_dict['param_noise'] and len(self.memory) >= self.experiment_dict['batch_size']:
+					episode_transitions = self.memory.memory[self.memory.position-self.experiment_dict['batch_size']:self.memory.position]
+					states = torch.cat([transition[0] for transition in episode_transitions], 0)
+					unperturbed_actions = self.agent.select_action(states, None, None)
+					perturbed_actions = torch.cat([transition[1] for transition in episode_transitions], 0)
+					ddpg_dist = ddpg_distance_metric(perturbed_actions.detach().cpu().numpy(), unperturbed_actions.detach().cpu().numpy())
+					self.param_noise.adapt(ddpg_dist)
+
 				if self.experiment_dict['ou_noise']: 
 					self.ounoise.scale = (self.experiment_dict['noise_scale'] - self.experiment_dict['final_noise_scale']) * max(0, self.experiment_dict['exploration_end'] - i_episode) / self.experiment_dict['exploration_end'] + self.experiment_dict['final_noise_scale']
 					self.ounoise.reset()

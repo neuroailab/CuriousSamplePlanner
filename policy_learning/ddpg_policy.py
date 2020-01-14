@@ -149,9 +149,9 @@ def main():
 			experiment_dict['rewards'].append(reward.item())
 
 			if(experiment_dict['use_splitter']):
-				memory.push(int(reward.item() == 1), state, action, mask, next_state, reward)
+				memory.push(int(reward.item() == 1), state, action, mask, next_state, int(reward.item() == 1)*experiment_dict['reward_size'])
 			else:
-				memory.push(state, action, mask, next_state, reward)
+				memory.push(state, action, mask, next_state, int(reward.item() == 1)*experiment_dict['reward_size'])
 
 			state = opt_cuda(next_state.type(torch.FloatTensor))
 			if len(memory) > experiment_dict['batch_size']:

@@ -35,7 +35,6 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "batch_size": 128,
         'actor_lr': 1e-4,
         'critic_lr': 1e-3,
-        'use_splitter': True, # Can't use splitter on ppo or a2c because they are on-policy algorithms
         "node_sampling": "softmax",
         "mode": "RandomStateEmbeddingPlanner",
         "feasible_training": True,
@@ -44,7 +43,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         'exploration_end': 100, 
         "exp_id": exp_id,
         "load_id": load_id,
-        'noise_scale': 1.0,
+        'noise_scale': 0.3,
         'final_noise_scale': 0.05,
         "enable_asm": False, 
         "growth_factor": 10,
@@ -53,8 +52,10 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "num_training_epochs": 30,
         "infeasible_penalty" : 0,
         'tau': 0.001,
+        'reward_size': 100,
         'hidden_size': 64,
-        'split': 0.5,
+        'use_splitter': True, # Can't use splitter on ppo or a2c because they are on-policy algorithms
+        'split': 0.4,
         'gamma': 0.9,
         'ou_noise': True,
         'param_noise': False,

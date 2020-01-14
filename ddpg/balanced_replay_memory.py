@@ -28,7 +28,10 @@ class BalancedReplayMemory(object):
         returning = []
         for _ in range(batch_size):
             index = np.random.choice(np.arange(len(self.memory_banks)), p=[1-self.split, self.split])
-            returning.append(random.choice(self.memory_banks[index]))
+            if(len(self.memory_banks[index]) > 0):
+                returning.append(random.choice(self.memory_banks[index]))
+            else:
+                returning.append(random.choice(self.memory_banks[1-index]))
         return returning
 
     def __len__(self):

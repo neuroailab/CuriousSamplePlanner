@@ -180,7 +180,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
                 experiment_dict['env_name'].split('-')[0].lower()))
         
         expert_dataset = gail.ExpertDataset(
-            file_name, num_trajectories=4)
+            file_name, num_trajectories=4, subsample_frequency=1)
         drop_last = len(expert_dataset) > experiment_dict['gail_batch_size']
         gail_train_loader = torch.utils.data.DataLoader(
             dataset=expert_dataset,

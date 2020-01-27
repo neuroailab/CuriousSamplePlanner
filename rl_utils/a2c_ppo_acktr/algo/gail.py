@@ -89,6 +89,8 @@ class Discriminator(nn.Module):
             n += 1
 
             self.optimizer.zero_grad()
+            # print("Gail Loss: "+str(gail_loss))
+            # print("Grad Pen: "+str(grad_pen))
             (gail_loss + grad_pen).backward()
             self.optimizer.step()
         return loss / n

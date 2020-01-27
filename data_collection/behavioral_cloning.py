@@ -91,8 +91,8 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     g_rewards = []
 
 
-    for solution_index in range(0, 128):
-
+    for solution_index in range(0, 4096):
+        print(solution_index)
         experiment_dict['exp_path'] = "./solution_data/" + experiment_dict["exp_id"]
         experiment_dict['load_path'] = "./solution_data/" + experiment_dict["load_id"]
         if (not os.path.isdir("./solution_data")):
@@ -114,7 +114,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         # Save the graph so we can load it back in later
         if(graph is not None):
             s_states = [np.expand_dims(plan[i].config.numpy(), axis=0) for i in range(len(plan)-1)]
-            s_actions = [plan[i].action for i in range(1, len(plan))]
+            s_actions = [plan[i].action for i in range(1, len(plan))]        
             s_rewards = [float(1) for _ in range(1, len(plan))]
             s_len = len(plan)-1
             g_states.append(np.expand_dims(np.concatenate(s_states, axis=0), axis=0))

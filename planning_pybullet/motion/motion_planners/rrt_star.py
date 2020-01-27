@@ -181,7 +181,6 @@ def rrt_star(start, goal, distance, sample, extend, collision, radius, max_time=
         neighbors = filter(lambda n: distance(
             n.config, new.config) < radius, nodes)
 
-        print(new)
         nodes.append(new)
 
         for n in neighbors:

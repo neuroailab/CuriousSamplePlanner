@@ -67,11 +67,9 @@ def astar(start, goal, distance, neighbors, collision,
     queue = [(cost(0, distance(start, goal)), 0, start)]
     visited = {start: Node(0, None)}
     iterations = 0
-    print("inside a*")
     while len(queue) != 0 and iterations < max_iterations:
 
         _, current_g, current = heappop(queue)
-        print(current)
         if visited[current].g != current_g:
             continue
         iterations += 1

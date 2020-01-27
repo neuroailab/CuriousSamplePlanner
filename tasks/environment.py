@@ -265,8 +265,8 @@ class Environment():
             inputs = opt_cuda(torch.tensor([0]))
 
         next_state = opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0).type(torch.FloatTensor))
-        # reard = opt_cuda(torch.unsqueeze(torch.tensor(reward), 0).type(torch.FloatTensor))
-        print(reward)
+        reward = opt_cuda(torch.unsqueeze(torch.tensor(reward), 0).type(torch.FloatTensor))
+        # print(reward)
         return next_state, reward, done, {"episode": {"r": reward} , "inputs":inputs, "prestable":opt_cuda(torch.unsqueeze(torch.tensor(pre_stable_state), 0)), "feasible":feasible, "command":command }
 
     def reset(self):

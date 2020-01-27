@@ -36,12 +36,11 @@ from motion_planners.discrete import astar
 import sys
 
 from CuriousSamplePlanner.tasks.three_block_stack import ThreeBlocks
-
 from CuriousSamplePlanner.tasks.ball_ramp import BallRamp
 from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
 from CuriousSamplePlanner.tasks.bookshelf import BookShelf
-
 from CuriousSamplePlanner.tasks.five_block_stack import FiveBlocks
+
 from CuriousSamplePlanner.scripts.utils import *
 
 from CuriousSamplePlanner.trainers.plan_graph import PlanGraph
@@ -130,7 +129,7 @@ class Planner():
 
 			next_state, reward, done, infos = self.environment.step(torch.squeeze(action))
 			# Extract extra info from intos
-			inputs, prestate, feasible, command = infos['inputs'], infos['prestable'], infos['feasible'], infos['command']
+			inputs, prestate, feasible, command = infos[0]['inputs'], infos[0]['prestable'], infos[0]['feasible'], infos[0]['command']
 
 			# Current State selection
 			# parent = self.graph.expand_node(1)[0]

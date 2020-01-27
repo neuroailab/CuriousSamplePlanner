@@ -73,6 +73,12 @@ class RandomStateEmbeddingPlanner(Planner):
 			for next_loaded in enumerate(DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
 				_, batch = next_loaded
 				inputs, labels, prestates, acts, feasible, _, index = batch
+
+				inputs = opt_cuda(inputs)
+				labels = opt_cuda(labels)
+				prestate = opt_cuda(prestates)
+				acts = opt_cuda(acts)
+
 				labels = torch.squeeze(labels)
 				self.optimizer_world.zero_grad()
 				outputs = self.worldModel(labels)
@@ -100,6 +106,13 @@ class RandomStateEmbeddingPlanner(Planner):
 		for _, batch in enumerate(
 				DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
 			inputs, labels, prestates, acts, feasible, _, index = batch
+
+			#Convert to cuda
+			inputs = opt_cuda(inputs)
+			labels = opt_cuda(labels)
+			prestate = opt_cuda(prestates)
+			acts = opt_cuda(acts)
+
 			labels = torch.squeeze(labels)
 			targets = labels[:, self.transform]
 			outputs = self.worldModel(labels)

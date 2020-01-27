@@ -123,9 +123,14 @@ class Planner():
 			parent = self.graph.expand_node(1)[0]
 			self.environment.set_state(parent.config)
 			parent_state = torch.unsqueeze(opt_cuda(torch.tensor(parent.config)), dim=0)
-			action = self.agent.select_action(parent_state, self.ounoise, self.param_noise)
-			next_state, reward, done, infos, inputs, prestate, feasible, command = self.environment.step(action)
+			if(self.experiment_dict["enable_asm"]):
+				action = self.agent.select_action(parent_state, self.ounoise, self.param_noise)
+			else:	
+				action = torch.unsqueeze(torch.tensor(np.random.uniform(low=-1, high=1, size=self.environment.action_space_size)), dim=0).type(torch.FloatTensor)
 
+			next_state, reward, done, infos = self.environment.step(torch.squeeze(action))
+			# Extract extra info from intos
+			inputs, prestate, feasible, command = infos['inputs'], infos['prestable'], infos['feasible'], infos['command']
 
 			# Current State selection
 			# parent = self.graph.expand_node(1)[0]
@@ -142,13 +147,20 @@ class Planner():
 			self.experiment_dict['rewards'].append(reward.item())
 
 			if(self.experiment_dict['use_splitter']):
-				self.memory.push(int(reward.item() == 1), parent_config, action, mask, next_state, reward)
+				self.memory.push(int(reward.item() == 1), parent_config.detach().cpu(), action.detach().cpu(), mask.detach().cpu(), next_state.detach().cpu(), reward.detach().cpu())
 			else:
-				self.memory.push(parent_config, action, mask, next_state, reward)
+				self.memory.push(parent_config.detach().cpu(), action.detach().cpu(), mask, next_state.detach().cpu(), reward.detach().cpu())
 
-			if (reward.item() == 1 or last_reward > 10):
+			if (reward.item() == 1):
 				i_episode  += 1
 				last_reward = 0
+
+				ntarget = torch.squeeze(next_state).numpy()
+				npretarget = prestate.cpu().numpy()
+
+				goal_node = self.graph.add_node(ntarget, npretarget, action.numpy(), parent.node_key, command = command)
+				if(self.experiment_dict['return_on_solution']):
+					return self.graph, self.graph.get_optimal_plan(start_node, goal_node), self.experiment_dict
 				# Found a reward, creating a new graph
 				self.graph = PlanGraph(environment=self.environment, node_sampling = self.node_sampling)
 				ss = self.environment.reset().cpu().numpy()[0]
@@ -167,27 +179,25 @@ class Planner():
 					self.ounoise.scale = (self.experiment_dict['noise_scale'] - self.experiment_dict['final_noise_scale']) * max(0, self.experiment_dict['exploration_end'] - i_episode) / self.experiment_dict['exploration_end'] + self.experiment_dict['final_noise_scale']
 					self.ounoise.reset()
 
-
-
-
-			if len(self.memory) > self.experiment_dict['batch_size']:
+			if len(self.memory) > self.experiment_dict['batch_size'] and total_numsteps%self.experiment_dict['update_interval']==0:
 				for _ in range(self.experiment_dict['updates_per_step']):
 					transitions = self.memory.sample(self.experiment_dict['batch_size'])
-
+					transitions = [[opt_cuda(i) for i in r] for r in transitions]
 					batch = Transition(*zip(*transitions))
 					value_loss, policy_loss = self.agent.update_parameters(batch)
+					transitions = None
 
-			target = opt_cuda(next_state.type(torch.FloatTensor))
-			pretarget = opt_cuda(prestate.type(torch.FloatTensor))
-			action = opt_cuda(action.type(torch.FloatTensor))
+			target = next_state.type(torch.FloatTensor)
+			pretarget = prestate.type(torch.FloatTensor)
+			action = action.type(torch.FloatTensor)
 			parent_nodes = parent.node_key
 			feasible = feasible
-			combined_perspective = opt_cuda(feature.type(torch.FloatTensor))
+			combined_perspective = feature.type(torch.FloatTensor)
 
 			self.experience_replay.bufferadd_single(combined_perspective, target, pretarget, action, feasible, parent_nodes, command)
 
 			if(total_numsteps%self.batch_size == 0):
-				# self.train_world_model(0)
+				self.train_world_model(0)
 			
 				# # Get the losses from all observations
 				whole_losses, whole_indices, whole_feasibles = self.calc_novelty()
@@ -201,36 +211,35 @@ class Planner():
 				self.print_exp_dict(verbose=False)
 
 				# # Adaptive batch
-				# if (average_loss <= self.loss_threshold or not self.experiment_dict['adaptive_batch']):
-				# 	added_base_count = 0
-				# 	for en_index, hl_index in enumerate(high_loss_indices):
-				# 		input, target, pretarget, action, _, parent_index, _ = self.experience_replay.__getitem__(hl_index)
-				# 		command = self.experience_replay.get_command(hl_index)
-				# 		ntarget = torch.squeeze(target).cpu().numpy()
-				# 		npretarget = pretarget.cpu().numpy()
-				# 		if (not self.graph.is_node(ntarget)):
-				# 			self.environment.set_state(ntarget)
-				# 			# for perspective in self.environment.perspectives:
-				# 			# 	picture, _, _ = take_picture(perspective[0], perspective[1], 0, size=512)
-				# 			# 	imageio.imwrite(self.exp_path
-				# 			# 					+ '/run_index=' + str(run_index)
-				# 			# 					+ ',index=' + str(en_index)
-				# 			# 					+ ',parent_index=' + str(int(parent_index))
-				# 			# 					+ ',node_index=' + str(self.graph.node_key) + '.jpg',
-				# 			# 					picture)
+				if (average_loss <= self.loss_threshold or not self.experiment_dict['adaptive_batch']):
+					added_base_count = 0
+					for en_index, hl_index in enumerate(high_loss_indices):
+						input, target, pretarget, action, _, parent_index, _ = self.experience_replay.__getitem__(hl_index)
+						command = self.experience_replay.get_command(hl_index)
+						ntarget = torch.squeeze(target).numpy()
+						npretarget = pretarget.cpu().numpy()
+						self.environment.set_state(ntarget)
+						# for perspective in self.environment.perspectives:
+						# 	picture, _, _ = take_picture(perspective[0], perspective[1], 0, size=512)
+						# 	imageio.imwrite(self.exp_path
+						# 					+ '/run_index=' + str(run_index)
+						# 					+ ',index=' + str(en_index)
+						# 					+ ',parent_index=' + str(int(parent_index))
+						# 					+ ',node_index=' + str(self.graph.node_key) + '.jpg',
+						# 					picture)
 
 
-				# 			self.graph.add_node(ntarget, npretarget, action.cpu().numpy(), parent_index, command = command)
-				# 			added_base_count += 1
-				# 		if (added_base_count == self.growth_factor):
-				# 			break
+						self.graph.add_node(ntarget, npretarget, action.numpy(), parent_index, command = command)
+						added_base_count += 1
+						if (added_base_count == self.growth_factor):
+							break
 
-				# 	del self.experience_replay
-				# 	self.experience_replay = ExperienceReplayBuffer()
-				# 	self.experiment_dict["num_graph_nodes"] += self.growth_factor
+					del self.experience_replay
+					self.experience_replay = ExperienceReplayBuffer()
+					self.experiment_dict["num_graph_nodes"] += self.growth_factor
 
-				# 	# Update novelty scores for tree nodes
-				# 	self.update_novelty_scores()
+					# Update novelty scores for tree nodes
+					self.update_novelty_scores()
 
 				# Save Params
 				self.save_params()

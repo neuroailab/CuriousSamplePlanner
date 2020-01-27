@@ -150,7 +150,8 @@ class ThreeBlocks(Environment):
 		collision = True
 		z = stable_z(self.green_block, self.floor)
 		while(collision):
-			pos1, pos2, pos3 = self.reachable_pos(z=0), self.reachable_pos(z=0), self.reachable_pos(z=0)
+			poses = [self.macroaction.reparameterize(self.objects[0], np.random.uniform(low=-1, high=1, size=4)) for _ in range(3)]
+			pos1, pos2, pos3 = [pose[0] for pose in poses]
 			state = State(len(self.objects), len(self.static_objects), len(self.macroaction.link_status))
 			state.set_position(0, pos1[0], pos1[1], z)
 			state.set_position(1, pos2[0], pos2[1], z)

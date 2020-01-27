@@ -36,11 +36,13 @@ from CuriousSamplePlanner.scripts.utils import *
 from gym import spaces
 from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 
+class Spec():
+    def __init__(self, id ):
+        self.id = id
 
 class Environment():
     def __init__(self, experiment_dict):
         self.nsamples_per_update = experiment_dict['nsamples_per_update']
-        self.asm_enabled = experiment_dict['enable_asm']
         self.detailed_gmp = experiment_dict['detailed_gmp']
         self.training = experiment_dict['training']
         if(experiment_dict['mode'] == "EffectPredictionPlanner" or experiment_dict['mode'] == "RandomStateEmbeddingPlanner"):
@@ -54,6 +56,12 @@ class Environment():
         self.state = State(len(self.objects), len(self.static_objects),len(self.macroaction.link_status))
         self.action_space_size = self.macroaction.action_space_size
         self.config_size =  self.state.config_size
+        self.reward_range = [0, 1]
+        self.metadata=None
+        self.spec = Spec(0)
+
+        self.observation_space = spaces.Box(low=-1, high=1, shape=( self.config_size,))
+      
         if(not linking):
             self.predict_mask = self.state.positions
         else:
@@ -65,7 +73,7 @@ class Environment():
 
     def take_action(self, action):
         # Get the macroaction that is being executed
-        action = action[0].detach().cpu().numpy()
+        action = action
         config = self.get_current_config()
         feasible, command =  self.macroaction.execute(action, config)
         return (action, int(feasible), command)
@@ -257,8 +265,9 @@ class Environment():
             inputs = opt_cuda(torch.tensor([0]))
 
         next_state = opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0).type(torch.FloatTensor))
-        reard = opt_cuda(torch.unsqueeze(torch.tensor(reward), 0).type(torch.FloatTensor))
-        return next_state, reward, [done], [{"episode": {"r": reward}}], inputs, opt_cuda(torch.unsqueeze(torch.tensor(pre_stable_state), 0)), feasible, command 
+        # reard = opt_cuda(torch.unsqueeze(torch.tensor(reward), 0).type(torch.FloatTensor))
+        print(reward)
+        return next_state, reward, done, {"episode": {"r": reward} , "inputs":inputs, "prestable":opt_cuda(torch.unsqueeze(torch.tensor(pre_stable_state), 0)), "feasible":feasible, "command":command }
 
     def reset(self):
         start_config = self.get_start_state()
@@ -267,3 +276,7 @@ class Environment():
             p.stepSimulation()
             time.sleep(0.01)
         return opt_cuda(torch.unsqueeze(torch.tensor(start_config), 0))
+
+    def seed(self, s):
+        pass
+

@@ -35,7 +35,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "batch_size": 128,
         'actor_lr': 1e-4,
         'critic_lr': 1e-3,
-        "node_sampling": "softmax",
+        "node_sampling": "uniform",
         "mode": "RandomStateEmbeddingPlanner",
         "feasible_training": True,
         "nsamples_per_update": 1024,
@@ -45,6 +45,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "load_id": load_id,
         'noise_scale': 0.3,
         'final_noise_scale': 0.05,
+        'update_interval' : 1,
         "enable_asm": False, 
         "growth_factor": 10,
         "detailed_gmp": False, 
@@ -54,8 +55,8 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         'tau': 0.001,
         'reward_size': 100,
         'hidden_size': 64,
-        'use_splitter': True, # Can't use splitter on ppo or a2c because they are on-policy algorithms
-        'split': 0.4,
+        'use_splitter': False, # Can't use splitter on ppo or a2c because they are on-policy algorithms
+        'split': 0.2,
         'gamma': 0.9,
         'ou_noise': True,
         'param_noise': False,
@@ -81,7 +82,8 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     #experiment_dict['load_path'] = 'example_images/' + experiment_dict["load_id"]
     adaptive_batch_lr = {
         "StateEstimationPlanner": 0.003,
-        "RandomStateEmbeddingPlanner": 0.00005,
+        # "RandomStateEmbeddingPlanner": 0.00005,
+        "RandomStateEmbeddingPlanner": 1,
         "EffectPredictionPlanner": 0.001,
         "RandomSearchPlanner": 0 
     }

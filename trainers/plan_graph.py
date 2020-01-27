@@ -117,9 +117,5 @@ class PlanGraph(Dataset):
 		self.goal_node = goal_node
 		distance = lambda a, b: 1
 		collision = lambda s: False
-		print(self.plan_graph)
 		path = astar(start_node, goal_node, distance, self.plan_graph, collision)
-		print(path)
-		for node_i in range(1, len(path)):
-			print(path[node_i].command)
 		return path

@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from a2c_ppo_acktr.utils import AddBias, init
+from CuriousSamplePlanner.scripts.utils import *
 
 """
 Modify standard PyTorch distributions so they are compatible with this code.
@@ -89,7 +90,8 @@ class DiagGaussian(nn.Module):
         #  An ugly hack for my KFAC implementation.
         zeros = torch.zeros(action_mean.size())
         if x.is_cuda:
-            zeros = zeros.cuda()
+            zeros = opt_cuda(zeros)
+
 
         action_logstd = self.logstd(zeros)
         return FixedNormal(action_mean, action_logstd.exp())

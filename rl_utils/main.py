@@ -105,9 +105,10 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "num_graph_nodes": 0,
     }
 
-    exp_type = exp_id.split("::")[1]
-    change_k, change_v = exp_type.split("=")
-    experiment_dict[change_k] = float(change_v)
+    if("::" in exp_id):    
+        exp_type = exp_id.split("::")[1]
+        change_k, change_v = exp_type.split("=")
+        experiment_dict[change_k] = float(change_v)
 
     if(torch.cuda.is_available()):
         prefix = "/mnt/fs0/arc11_2/solution_data_new/"
@@ -139,7 +140,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
     utils.cleanup_log_dir(eval_log_dir)
 
     torch.set_num_threads(1)
-    device = torch.device("cuda:0" if args.cuda else "cpu")
+    device = torch.device(opt_cuda_str() if args.cuda else "cpu")
 
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
                          args.gamma, args.log_dir, device, False, experiment_dict = experiment_dict)
@@ -148,6 +149,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
         envs.observation_space.shape,
         envs.action_space,
         base_kwargs={'recurrent': args.recurrent_policy}))
+
 
 
     if args.algo == 'a2c':

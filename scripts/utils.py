@@ -29,6 +29,14 @@ def reparameterize(X, min_rv, max_rv):
 	"""
 	return (((X+1)/2.0)% 1)*(max_rv-min_rv)+min_rv
 
+
+def opt_cuda_str():
+	cuda="cuda:0"
+	for argv in sys.argv:
+		if(argv.isdigit()):
+			cuda="cuda:"+str(sys.argv[2])
+	return cuda
+
 def opt_cuda(t):
 	if(torch.cuda.is_available()):
 		cuda="cuda:0"

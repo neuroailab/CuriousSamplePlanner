@@ -39,7 +39,6 @@ class AddBias(nn.Module):
             bias = self._bias.t().view(1, -1)
         else:
             bias = self._bias.t().view(1, -1, 1, 1)
-
         return x + bias
 
 

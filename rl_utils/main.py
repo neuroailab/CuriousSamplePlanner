@@ -37,9 +37,10 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "gail_batch_size": 128,
             "gail_epoch": 5,
             "lr": 3e-4,
+            "gail_lr": 1e-3,
             "eps": 1e-5,
             "alpha": 0.99,
-            "gamma": 0.9,
+            "gamma": 0.5,
             "use_gae": True,
             "gae_lambda": 0.95,
             "entropy_coef": 0,
@@ -56,7 +57,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "save_interval": 100,
             "eval_interval": None,
             "num_env_steps": 10e6,
-            "expert_examples": 4096,
+            "expert_examples": 2048,
             # "env_name": "HalfCheetah-v2",
             "env_name": "ThreeBlocks",
             "log_dir": "/tmp/gym/",
@@ -176,7 +177,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
         assert len(envs.observation_space.shape) == 1
         discr = gail.Discriminator(
             envs.observation_space.shape[0] + envs.action_space.shape[0], 100,
-            device)
+            device, gail_lr=args.gail_lr)
         file_name = os.path.join(
             args.gail_experts_dir, "trajs_{}.pt".format(
                 args.env_name.split('-')[0].lower()))

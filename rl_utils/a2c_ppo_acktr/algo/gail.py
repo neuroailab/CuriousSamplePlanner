@@ -10,7 +10,7 @@ from baselines.common.running_mean_std import RunningMeanStd
 
 
 class Discriminator(nn.Module):
-    def __init__(self, input_dim, hidden_dim, device):
+    def __init__(self, input_dim, hidden_dim, device, gail_lr = 1e-3):
         super(Discriminator, self).__init__()
 
         self.device = device
@@ -22,7 +22,7 @@ class Discriminator(nn.Module):
 
         self.trunk.train()
 
-        self.optimizer = torch.optim.Adam(self.trunk.parameters())
+        self.optimizer = torch.optim.Adam(self.trunk.parameters(), lr=gail_lr)
 
         self.returns = None
         self.ret_rms = RunningMeanStd(shape=())

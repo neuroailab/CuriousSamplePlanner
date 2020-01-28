@@ -41,9 +41,9 @@ from CuriousSamplePlanner.tasks.state import State
 
 
 
-class ThreeBlocks(Environment):
+class TwoBlocks(Environment):
 	def __init__(self, *args):
-		super(ThreeBlocks, self).__init__(*args)
+		super(TwoBlocks, self).__init__(*args)
 
 		connect(use_gui=False)
 
@@ -98,12 +98,12 @@ class ThreeBlocks(Environment):
 		vals.sort()
 
 		# Two stack
-		# if( (vals[0] > 0.06) or (vals[1] > 0.06) or (vals[2] > 0.06)):
-		# 	return True
+		if( (vals[0] > 0.06) or (vals[1] > 0.06) or (vals[2] > 0.06)):
+			return True
 
 		# Three stack
-		if(vals[0]<0.06 and (vals[1] < 0.16 and vals[1] > 0.06) and (vals[2] > 0.16)):
-			return True
+		# if(vals[0]<0.06 and (vals[1] < 0.16 and vals[1] > 0.06) and (vals[2] > 0.16)):
+		# 	return True
 		return False
 
 

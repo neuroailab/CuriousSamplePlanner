@@ -24,7 +24,7 @@ from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.agent.planning_agent import PlanningAgent
 
 
-def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
+def main(exp_id="no_expid", load_id="no_loadid", size = 4096, split=8, index=0):  # control | execute | step
 
     # load = "found_pah.pkl"
     load = None
@@ -34,7 +34,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     experiment_dict = {
         # Hyps
         "task": "ThreeBlocks",
-        "learning_rate": 5e-5,  
+        "learning_rate": 1e-3,  
         "sample_cap": 1e7, 
         "batch_size": 128,
         "return_on_solution":True,
@@ -91,7 +91,8 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     g_rewards = []
 
 
-    for solution_index in range(0, 4096):
+    for solution_index in range((size//split)*index, size//split*(index+1)):
+
         print(solution_index)
         experiment_dict['exp_path'] = "./solution_data/" + experiment_dict["exp_id"]
         experiment_dict['load_path'] = "./solution_data/" + experiment_dict["load_id"]
@@ -101,7 +102,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         #experiment_dict['load_path'] = 'example_images/' + experiment_dict["load_id"]
         adaptive_batch_lr = {
             "StateEstimationPlanner": 0.003,
-            "RandomStateEmbeddingPlanner": 0.00005,
+            "RandomStateEmbeddingPlanner": 0.0005,
             "EffectPredictionPlanner": 0.001,
             "RandomSearchPlanner": 0 
         }
@@ -110,10 +111,12 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         planner = PC(experiment_dict)
 
         graph, plan, experiment_dict = planner.plan()
-
+        experiment_dict['num_sampled_nodes'] = 0
+        experiment_dict['num_graph_nodes'] = 0
         # Save the graph so we can load it back in later
         if(graph is not None):
-            s_states = [np.expand_dims(plan[i].config.numpy(), axis=0) for i in range(len(plan)-1)]
+            print("GOT A SOL")
+            s_states = [np.expand_dims(plan[i].config, axis=0) for i in range(len(plan)-1)]
             s_actions = [plan[i].action for i in range(1, len(plan))]        
             s_rewards = [float(1) for _ in range(1, len(plan))]
             s_len = len(plan)-1
@@ -145,9 +148,4 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
 
 if __name__ == '__main__':
     exp_id = str(sys.argv[1])
-    if(len(sys.argv)>3):
-        load_id = str(sys.argv[3])
-    else:
-        load_id = ""
-
-    main(exp_id=exp_id, load_id=load_id)
+    main(exp_id=exp_id, load_id="", size=int(sys.argv[2]), split=int(sys.argv[3]), index=int(sys.argv[4]))

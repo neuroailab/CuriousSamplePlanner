@@ -119,7 +119,6 @@ def main(exp_id="no_expid", load_id="no_loadid"):
     if (os.path.isdir(experiment_dict['exp_path'])):
         shutil.rmtree(experiment_dict['exp_path'])
 
-    print(experiment_dict['exp_path'])
     os.mkdir(experiment_dict['exp_path'])
 
     args = Args(**experiment_dict)

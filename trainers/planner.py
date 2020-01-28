@@ -129,7 +129,7 @@ class Planner():
 
 			next_state, reward, done, infos = self.environment.step(torch.squeeze(action))
 			# Extract extra info from intos
-			inputs, prestate, feasible, command = infos[0]['inputs'], infos[0]['prestable'], infos[0]['feasible'], infos[0]['command']
+			inputs, prestate, feasible, command = infos['inputs'], infos['prestable'], infos['feasible'], infos['command']
 
 			# Current State selection
 			# parent = self.graph.expand_node(1)[0]

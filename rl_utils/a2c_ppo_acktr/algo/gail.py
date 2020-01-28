@@ -114,7 +114,7 @@ class ExpertDataset(torch.utils.data.Dataset):
         all_trajectories = torch.load(file_name)
         # num_trajectories = all_trajectories['lengths'].shape[0]
         perm = torch.randperm(all_trajectories['states'].size(0))
-        idx = perm[:num_trajectories]
+        idx = perm[:int(num_trajectories)]
 
         self.trajectories = {}
         

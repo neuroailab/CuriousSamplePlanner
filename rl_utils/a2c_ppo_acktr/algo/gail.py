@@ -66,15 +66,13 @@ class Discriminator(nn.Module):
         for expert_batch, policy_batch in zip(expert_loader,
                                               policy_data_generator):
             policy_state, policy_action = policy_batch[0], policy_batch[2]
-            policy_d = self.trunk(
-                torch.cat([policy_state, policy_action], dim=1))
+            policy_d = self.trunk(torch.cat([policy_state, policy_action], dim=1))
 
             expert_state, expert_action = expert_batch
             expert_state = obsfilt(expert_state.numpy(), update=False)
             expert_state = torch.FloatTensor(expert_state).to(self.device)
             expert_action = expert_action.to(self.device)
-            expert_d = self.trunk(
-                torch.cat([expert_state, expert_action], dim=1))
+            expert_d = self.trunk(torch.cat([expert_state, expert_action], dim=1))
 
             expert_loss = F.binary_cross_entropy_with_logits(
                 expert_d,

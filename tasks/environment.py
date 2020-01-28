@@ -263,13 +263,13 @@ class Environment():
         if(state_estimation):
             inputs = torch.unsqueeze(torch.cat([torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0, 1) for yaw, pit in self.perspectives]), dim=0)
         else:
-            inputs = opt_cuda(torch.tensor([0]))
+            inputs = torch.tensor([0])
 
-        next_state = opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0).type(torch.FloatTensor))
+        next_state = torch.unsqueeze(torch.tensor(self.get_current_config()), 0).type(torch.FloatTensor)
         # reward = opt_cuda(torch.unsqueeze(torch.tensor(reward), 0).type(torch.FloatTensor))
         # print(reward)
 
-        return next_state, reward, done, {"episode": {"r": reward} , "inputs": inputs, "prestable": opt_cuda(torch.unsqueeze(torch.tensor(pre_stable_state), 0)), "feasible":feasible, "command":command }
+        return next_state, reward, done, {"episode": {"r": reward} , "inputs": inputs, "prestable": torch.unsqueeze(torch.tensor(pre_stable_state), 0), "feasible":feasible, "command":command }
 
     def reset(self):
         start_config = self.get_start_state()
@@ -277,7 +277,7 @@ class Environment():
         for _ in range(5):
             p.stepSimulation()
             time.sleep(0.01)
-        return opt_cuda(torch.unsqueeze(torch.tensor(start_config), 0))
+        return torch.unsqueeze(torch.tensor(start_config), 0)
 
     def seed(self, s):
         pass

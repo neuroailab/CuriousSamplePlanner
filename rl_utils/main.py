@@ -19,7 +19,7 @@ from a2c_ppo_acktr.envs import make_vec_envs
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from evaluation import evaluate
-
+from CuriousSamplePlanner.scripts.utils import *
 
 
 
@@ -56,6 +56,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "save_interval": 100,
             "eval_interval": None,
             "num_env_steps": 10e6,
+            "expert_examples": 4096,
             # "env_name": "HalfCheetah-v2",
             "env_name": "ThreeBlocks",
             "log_dir": "/tmp/gym/",
@@ -64,9 +65,8 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "recurrent_policy": False,
             "use_linear_lr_decay": True,
             "custom_environment": False,
-            # Hyps
-            "learning_rate": 5e-5,  
-            "sample_cap": 1e7, 
+
+            # Hyps 
             "batch_size": 128,
             "node_sampling": "uniform",
             "mode": "RandomStateEmbeddingPlanner",
@@ -103,8 +103,13 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "num_sampled_nodes": 0,
             "num_graph_nodes": 0,
     }
+
+    exp_type = exp_id.split("::")[1]
+    change_k, change_v = exp_type.split("=")
+    experiment_dict[change_k] = float(change_v)
+
     if(torch.cuda.is_available()):
-        prefix = "/mnt/fs0/arc11_2/solution_data/"
+        prefix = "/mnt/fs0/arc11_2/solution_data_new/"
     else:
         prefix = "./solution_data/"
 
@@ -138,11 +143,11 @@ def main(exp_id="no_expid", load_id="no_loadid"):
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
                          args.gamma, args.log_dir, device, False, experiment_dict = experiment_dict)
 
-    actor_critic = Policy(
+    actor_critic = opt_cuda(Policy(
         envs.observation_space.shape,
         envs.action_space,
-        base_kwargs={'recurrent': args.recurrent_policy})
-    actor_critic.to(device)
+        base_kwargs={'recurrent': args.recurrent_policy}))
+
 
     if args.algo == 'a2c':
         agent = algo.A2C_ACKTR(
@@ -192,7 +197,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
 
     obs = envs.reset()
     rollouts.obs[0].copy_(obs)
-    rollouts.to(device)
+    rollouts.cuda()
 
     episode_rewards = deque(maxlen=1000)
     episode_gail_losses = deque(maxlen=1000)
@@ -218,14 +223,8 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             # Obser reward and next obs
             obs, reward, done, infos = envs.step(action)
 
-            # for info in infos:
-            #     if 'episode' in info.keys():
-            #         episode_rewards.append(info['episode']['r'])
             episode_rewards.append(reward.item())
             
-
-
-
             # If done then clean the history of observations.
             masks = torch.FloatTensor(
                 [[0.0] if done_ else [1.0] for done_ in done])

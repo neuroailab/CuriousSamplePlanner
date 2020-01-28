@@ -12,7 +12,7 @@ from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.shmem_vec_env import ShmemVecEnv
 from baselines.common.vec_env.vec_normalize import \
     VecNormalize as VecNormalize_
-
+from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.tasks.three_block_stack import ThreeBlocks
 
 try:
@@ -173,7 +173,7 @@ class VecPyTorch(VecEnvWrapper):
 
     def reset(self):
         obs = self.venv.reset()
-        obs = torch.from_numpy(obs).float().to(self.device)
+        obs = opt_cuda(torch.from_numpy(obs).float())
         return obs
 
     def step_async(self, actions):
@@ -185,7 +185,7 @@ class VecPyTorch(VecEnvWrapper):
 
     def step_wait(self):
         obs, reward, done, info = self.venv.step_wait()
-        obs = torch.from_numpy(obs).float().to(self.device)
+        obs = opt_cuda(torch.from_numpy(obs).float())
         reward = torch.from_numpy(reward).unsqueeze(dim=1).float()
         return obs, reward, done, info
 

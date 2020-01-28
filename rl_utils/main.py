@@ -125,6 +125,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
 
     args = Args(**experiment_dict)
     args.gail_epoch = int(args.gail_epoch)
+    args.num_steps = int(args.num_steps)
     # args = get_args()
 
     torch.manual_seed(args.seed)

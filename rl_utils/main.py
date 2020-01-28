@@ -123,6 +123,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
     os.mkdir(experiment_dict['exp_path'])
 
     args = Args(**experiment_dict)
+    args.gail_epoch = int(args.gail_epoch)
     # args = get_args()
 
     torch.manual_seed(args.seed)

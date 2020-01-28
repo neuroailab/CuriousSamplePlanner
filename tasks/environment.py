@@ -258,6 +258,7 @@ class Environment():
         if(self.check_goal_state(post_stable_state)):
             reward = 1.0
             done=True
+            self.reset()
             
         if(state_estimation):
             inputs = torch.unsqueeze(torch.cat([torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0, 1) for yaw, pit in self.perspectives]), dim=0)
@@ -265,9 +266,10 @@ class Environment():
             inputs = opt_cuda(torch.tensor([0]))
 
         next_state = opt_cuda(torch.unsqueeze(torch.tensor(self.get_current_config()), 0).type(torch.FloatTensor))
-        reward = opt_cuda(torch.unsqueeze(torch.tensor(reward), 0).type(torch.FloatTensor))
+        # reward = opt_cuda(torch.unsqueeze(torch.tensor(reward), 0).type(torch.FloatTensor))
         # print(reward)
-        return next_state, reward, done, {"episode": {"r": reward} , "inputs":inputs, "prestable":opt_cuda(torch.unsqueeze(torch.tensor(pre_stable_state), 0)), "feasible":feasible, "command":command }
+
+        return next_state, reward, done, {"episode": {"r": reward} , "inputs": inputs, "prestable": opt_cuda(torch.unsqueeze(torch.tensor(pre_stable_state), 0)), "feasible":feasible, "command":command }
 
     def reset(self):
         start_config = self.get_start_state()

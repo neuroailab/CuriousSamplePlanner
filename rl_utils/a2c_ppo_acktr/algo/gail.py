@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
 from torch import autograd
-import time
+
 from baselines.common.running_mean_std import RunningMeanStd
 
 
@@ -38,8 +38,7 @@ class Discriminator(nn.Module):
         policy_data = torch.cat([policy_state, policy_action], dim=1)
 
         alpha = alpha.expand_as(expert_data).to(expert_data.device)
-        # print(expert_data.shape)
-        # print(policy_data.shape)
+
         mixup_data = alpha * expert_data + (1 - alpha) * policy_data
         mixup_data.requires_grad = True
 
@@ -58,7 +57,9 @@ class Discriminator(nn.Module):
 
     def update(self, expert_loader, rollouts, obsfilt=None):
         self.train()
-        policy_data_generator = rollouts.feed_forward_generator(None, mini_batch_size=expert_loader.batch_size)
+
+        policy_data_generator = rollouts.feed_forward_generator(
+            None, mini_batch_size=expert_loader.batch_size)
 
         loss = 0
         n = 0
@@ -69,10 +70,11 @@ class Discriminator(nn.Module):
                 torch.cat([policy_state, policy_action], dim=1))
 
             expert_state, expert_action = expert_batch
-            # expert_state = obsfilt(expert_state.numpy(), update=False)
+            expert_state = obsfilt(expert_state.numpy(), update=False)
             expert_state = torch.FloatTensor(expert_state).to(self.device)
             expert_action = expert_action.to(self.device)
-            expert_d = self.trunk(torch.cat([expert_state, expert_action], dim=1))
+            expert_d = self.trunk(
+                torch.cat([expert_state, expert_action], dim=1))
 
             expert_loss = F.binary_cross_entropy_with_logits(
                 expert_d,
@@ -89,8 +91,6 @@ class Discriminator(nn.Module):
             n += 1
 
             self.optimizer.zero_grad()
-            # print("Gail Loss: "+str(gail_loss))
-            # print("Grad Pen: "+str(grad_pen))
             (gail_loss + grad_pen).backward()
             self.optimizer.step()
         return loss / n
@@ -112,7 +112,7 @@ class Discriminator(nn.Module):
 
 
 class ExpertDataset(torch.utils.data.Dataset):
-    def __init__(self, file_name, num_trajectories=4, subsample_frequency=1):
+    def __init__(self, file_name, num_trajectories=4, subsample_frequency=20):
         all_trajectories = torch.load(file_name)
         num_trajectories = all_trajectories['lengths'].shape[0]
         perm = torch.randperm(all_trajectories['states'].size(0))
@@ -122,30 +122,31 @@ class ExpertDataset(torch.utils.data.Dataset):
         
         # See https://github.com/pytorch/pytorch/issues/14886
         # .long() for fixing bug in torch v0.4.1
-        start_idx = 0
+        start_idx = torch.randint(
+            0, subsample_frequency, size=(num_trajectories, )).long()
 
         for k, v in all_trajectories.items():
             data = v[idx]
+
             if k != 'lengths':
                 samples = []
                 for i in range(num_trajectories):
-                    samples.append(data[i, :])
-
+                    samples.append(data[i, start_idx[i]::subsample_frequency])
                 self.trajectories[k] = torch.stack(samples)
             else:
-                self.trajectories[k] = data #// subsample_frequency
+                self.trajectories[k] = data // subsample_frequency
 
         self.i2traj_idx = {}
         self.i2i = {}
-
-        self.length = self.trajectories['lengths'].sum().item()
-
+        
+        self.length = int(self.trajectories['lengths'].sum().item())
+        
         traj_idx = 0
         i = 0
 
         self.get_idx = []
         
-        for j in range(int(self.length)):
+        for j in range(self.length):
             
             while self.trajectories['lengths'][traj_idx].item() <= i:
                 i -= self.trajectories['lengths'][traj_idx].item()
@@ -157,11 +158,10 @@ class ExpertDataset(torch.utils.data.Dataset):
             
             
     def __len__(self):
-        return int(self.length)
+        return self.length
 
     def __getitem__(self, i):
         traj_idx, i = self.get_idx[i]
-        i=int(i)
-        
-        return self.trajectories['states'][traj_idx][i], self.trajectories[
-            'actions'][traj_idx][i]
+
+        return self.trajectories['states'][int(traj_idx)][int(i)], self.trajectories[
+            'actions'][int(traj_idx)][int(i)]

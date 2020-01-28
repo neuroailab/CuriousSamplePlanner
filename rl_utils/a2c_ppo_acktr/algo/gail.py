@@ -111,10 +111,11 @@ class Discriminator(nn.Module):
 
 class ExpertDataset(torch.utils.data.Dataset):
     def __init__(self, file_name, num_trajectories=4, subsample_frequency=20):
+        num_trajectories = int(num_trajectories)
         all_trajectories = torch.load(file_name)
         # num_trajectories = all_trajectories['lengths'].shape[0]
         perm = torch.randperm(all_trajectories['states'].size(0))
-        idx = perm[:int(num_trajectories)]
+        idx = perm[:num_trajectories]
 
         self.trajectories = {}
         

@@ -5,7 +5,7 @@ import numpy as np
 # Constants
 pathname = "./data_collection/solution_data/"
 exp_name = "trajs_threeblocks"
-save_name = "trajs_theeblocks_2048"
+save_name = "trajs_theeblocks_clean"
 trajectory_length = 128
 
 # First, get all of the files
@@ -27,27 +27,28 @@ g_lens = []
 
 for file in data_files:
 	data = torch.load(pathname+exp_name+"/"+file)
+	if(data['lengths'] == 2):
 
-	g_states.append(data['states'])
-	g_actions.append(data['actions'])
+		g_states.append(data['states'])
+		g_actions.append(data['actions'])
 
-	g_rewards.append(data['rewards'])
-	g_lens.append(data['lengths'])
-	total_length+=data['lengths']
+		g_rewards.append(data['rewards'])
+		g_lens.append(data['lengths'])
+		total_length+=data['lengths']
 
-	if(total_length>trajectory_length):
+		if(total_length>trajectory_length):
 
-		# Now we have gotten enough samples to cut it off
+			# Now we have gotten enough samples to cut it off
 
-		traj_states.append(np.concatenate(g_states, axis=1)[:, :trajectory_length, :])
-		traj_actions.append(np.concatenate(g_actions, axis=1)[:, :trajectory_length, :])
-		traj_rewards.append(np.expand_dims(np.concatenate(np.array(g_rewards)), axis=0)[:, :trajectory_length])
-		traj_lens.append(trajectory_length)
-		g_states = []
-		g_actions = []
-		g_rewards = []
-		g_lens = []
-		total_length = 0
+			traj_states.append(np.concatenate(g_states, axis=1)[:, :trajectory_length, :])
+			traj_actions.append(np.concatenate(g_actions, axis=1)[:, :trajectory_length, :])
+			traj_rewards.append(np.expand_dims(np.concatenate(np.array(g_rewards)), axis=0)[:, :trajectory_length])
+			traj_lens.append(trajectory_length)
+			g_states = []
+			g_actions = []
+			g_rewards = []
+			g_lens = []
+			total_length = 0
 
 # Now we have all of the trajectories, time to turn it into the data file
 total_states = np.concatenate(traj_states, axis=0)

@@ -29,16 +29,18 @@ for file in data_files:
 
 	g_states.append(data['states'])
 	g_actions.append(data['actions'])
+
 	g_rewards.append(data['rewards'])
 	g_lens.append(data['lengths'])
 	total_length+=data['lengths']
 
 	if(total_length>trajectory_length):
+
 		# Now we have gotten enough samples to cut it off
 
 		traj_states.append(np.concatenate(g_states, axis=1)[:, :trajectory_length, :])
 		traj_actions.append(np.concatenate(g_actions, axis=1)[:, :trajectory_length, :])
-		traj_rewards.append(np.concatenate(np.array(g_rewards)))
+		traj_rewards.append(np.expand_dims(np.concatenate(np.array(g_rewards)), axis=0)[:, :trajectory_length])
 		traj_lens.append(np.array(g_lens))
 		g_states = []
 		g_actions = []
@@ -47,7 +49,6 @@ for file in data_files:
 		total_length = 0
 
 # Now we have all of the trajectories, time to turn it into the data file
-
 total_states = np.concatenate(traj_states, axis=0)
 total_actions = np.concatenate(traj_actions, axis=0)
 total_rewards = np.concatenate(traj_rewards, axis=0)

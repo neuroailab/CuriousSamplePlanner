@@ -127,6 +127,7 @@ class ExpertDataset(torch.utils.data.Dataset):
         for k, v in all_trajectories.items():
             data = v[idx]
 
+            print(str(k)+":"+str(data.shape))
             if k != 'lengths':
                 samples = []
                 for i in range(num_trajectories):

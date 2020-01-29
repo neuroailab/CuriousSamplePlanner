@@ -5,6 +5,7 @@ import numpy as np
 # Constants
 pathname = "./data_collection/solution_data/"
 exp_name = "trajs_threeblocks"
+save_name = "trajs_theeblocks_2048"
 trajectory_length = 128
 
 # First, get all of the files
@@ -62,7 +63,7 @@ data = {
 	'lengths': torch.from_numpy(total_lens).float()
 }
 
-torch.save(data, "./rl_utils/gail_experts/"+exp_name+".pt")
+torch.save(data, "./rl_utils/gail_experts/"+save_name+".pt")
 
 
 

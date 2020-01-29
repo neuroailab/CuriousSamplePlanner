@@ -37,6 +37,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "gail_batch_size": 128,
             "gail_epoch": 5,
             "lr": 3e-4,
+            "dataset_name": "trajs_threeblocks_2048.pt",
             "gail_lr": 1e-3,
             "eps": 1e-5,
             "alpha": 0.99,
@@ -183,8 +184,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             envs.observation_space.shape[0] + envs.action_space.shape[0], 100,
             device, gail_lr=args.gail_lr)
         file_name = os.path.join(
-            args.gail_experts_dir, "trajs_{}.pt".format(
-                args.env_name.split('-')[0].lower()))
+            args.gail_experts_dir, args.dataset_name)
         
         expert_dataset = gail.ExpertDataset(
             file_name, num_trajectories=args.expert_examples, subsample_frequency=1)

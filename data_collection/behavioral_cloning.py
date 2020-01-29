@@ -25,7 +25,7 @@ from CuriousSamplePlanner.agent.planning_agent import PlanningAgent
 
 
 def num_trajs(exp_id):
-    num_files = len(next(os.walk("./data_collection/"+str(exp_id)))[2])
+    num_files = len(next(os.walk("./data_collection/solution_data/"+str(exp_id)))[2])
     print("num files: "+str(num_files))
     return num_files
 
@@ -130,7 +130,7 @@ def main(exp_id="no_expid", load_id="no_loadid", max_num = 64):  # control | exe
                 'rewards': np.array(s_rewards),
                 'lengths': float(s_len)
             }
-            torch.save(data, "./data_collection/"+str(exp_id)+"/"+str(time.time())+".pt")
+            torch.save(data, "./data_collection/solution_data/"+str(exp_id)+"/"+str(time.time())+".pt")
 
         disconnect()
 

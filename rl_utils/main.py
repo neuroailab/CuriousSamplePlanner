@@ -49,7 +49,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "seed": 1,
             "cuda_deterministic": False,
             "num_processes": 1,
-            "num_steps": 2048,
+            "num_steps": 1024,
             "ppo_epoch": 10,
             "num_mini_batch": 32,
             "clip_param": 0.2,

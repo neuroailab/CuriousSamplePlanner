@@ -24,12 +24,18 @@ from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.agent.planning_agent import PlanningAgent
 
 
-def main(exp_id="no_expid", load_id="no_loadid", size = 4096, split=8, index=0):  # control | execute | step
+def num_trajs(exp_id):
+    num_files = len(next(os.walk("./data_collection/"+str(exp_id)))[2])
+    print("num files: "+str(num_files))
+    return num_files
+
+
+
+def main(exp_id="no_expid", load_id="no_loadid", max_num = 64):  # control | execute | step
 
     # load = "found_pah.pkl"
     load = None
 
-    
     # Set up the hyperparameters
     experiment_dict = {
         # Hyps
@@ -90,10 +96,9 @@ def main(exp_id="no_expid", load_id="no_loadid", size = 4096, split=8, index=0):
     g_actions = []
     g_rewards = []
 
+    total_length = 0
+    while( num_trajs(exp_id) < max_num ):
 
-    for solution_index in range((size//split)*index, size//split*(index+1)):
-
-        print(solution_index)
         experiment_dict['exp_path'] = "./solution_data/" + experiment_dict["exp_id"]
         experiment_dict['load_path'] = "./solution_data/" + experiment_dict["load_id"]
         if (not os.path.isdir("./solution_data")):
@@ -115,37 +120,23 @@ def main(exp_id="no_expid", load_id="no_loadid", size = 4096, split=8, index=0):
         experiment_dict['num_graph_nodes'] = 0
         # Save the graph so we can load it back in later
         if(graph is not None):
-            print("GOT A SOL")
             s_states = [np.expand_dims(plan[i].config, axis=0) for i in range(len(plan)-1)]
             s_actions = [plan[i].action for i in range(1, len(plan))]        
             s_rewards = [float(1) for _ in range(1, len(plan))]
             s_len = len(plan)-1
-            g_states.append(np.expand_dims(np.concatenate(s_states, axis=0), axis=0))
-            g_actions.append(np.expand_dims(np.concatenate(s_actions, axis=0), axis=0))
-            g_rewards.append(np.array(s_rewards))
-            g_lens.append(float(s_len))
+            data = {
+                'states': np.expand_dims(np.concatenate(s_states, axis=0), axis=0),
+                'actions': np.expand_dims(np.concatenate(s_actions, axis=0), axis=0),
+                'rewards': np.array(s_rewards),
+                'lengths': float(s_len)
+            }
+            torch.save(data, "./data_collection/"+str(exp_id)+"/"+str(time.time())+".pt")
 
         disconnect()
 
-    # Finished collecting expert trajectories, time to save the file as a pt record
-    data_states = np.concatenate(g_states, axis=0)
-    data_actions = np.concatenate(g_actions, axis=0)
-    data_rewards = np.array(g_rewards)
-    data_lens = np.array(g_lens)
 
-    print(data_states.shape)
-    print(data_actions.shape)
-    print(data_rewards.shape)
-    print(data_lens.shape)
-    data = {
-        'states': torch.from_numpy(data_states).float(),
-        'actions': torch.from_numpy(data_actions).float(),
-        'rewards': torch.from_numpy(data_rewards).float(),
-        'lengths': torch.from_numpy(data_lens).float()
-    }
-    torch.save(data, "./rl_utils/gail_experts/trajs_threeblocks.pt")
 
 
 if __name__ == '__main__':
     exp_id = str(sys.argv[1])
-    main(exp_id=exp_id, load_id="", size=int(sys.argv[2]), split=int(sys.argv[3]), index=int(sys.argv[4]))
+    main(exp_id=exp_id, load_id="", max_num=int(sys.argv[2]))

@@ -126,8 +126,6 @@ class ExpertDataset(torch.utils.data.Dataset):
 
         for k, v in all_trajectories.items():
             data = v[idx]
-
-            print(str(k)+":"+str(data.shape))
             if k != 'lengths':
                 samples = []
                 for i in range(num_trajectories):
@@ -138,7 +136,7 @@ class ExpertDataset(torch.utils.data.Dataset):
 
         self.i2traj_idx = {}
         self.i2i = {}
-        
+        print(self.trajectories['lengths'])
         self.length = int(self.trajectories['lengths'].sum().item())
         
         traj_idx = 0

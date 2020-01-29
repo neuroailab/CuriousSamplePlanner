@@ -41,7 +41,7 @@ for file in data_files:
 		traj_states.append(np.concatenate(g_states, axis=1)[:, :trajectory_length, :])
 		traj_actions.append(np.concatenate(g_actions, axis=1)[:, :trajectory_length, :])
 		traj_rewards.append(np.expand_dims(np.concatenate(np.array(g_rewards)), axis=0)[:, :trajectory_length])
-		traj_lens.append(np.array(g_lens))
+		traj_lens.append(trajectory_length)
 		g_states = []
 		g_actions = []
 		g_rewards = []
@@ -52,7 +52,8 @@ for file in data_files:
 total_states = np.concatenate(traj_states, axis=0)
 total_actions = np.concatenate(traj_actions, axis=0)
 total_rewards = np.concatenate(traj_rewards, axis=0)
-total_lens = np.concatenate(traj_lens, axis=0)
+total_lens = np.array(traj_lens)
+print(total_lens)
 
 data = {
 	'states': torch.from_numpy(total_states).float(),

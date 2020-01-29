@@ -3,19 +3,20 @@ import os
 import shutil
 
 
-max_num = 16
-num_workers = 4
+max_num = 1024
+num_workers = 10
 prefix  = "./data_collection/"
-exp_name = "first_attempt"
+exp_name = "trajs_threeblocks"
+cuda = "-1"
 
 
 # First, we need to create a folder to hold all of the solutions
-if (os.path.isdir(prefix+exp_name)):
-    shutil.rmtree(prefix+exp_name)
+if (not os.path.isdir(prefix+exp_name)):
+	os.mkdir(prefix+exp_name)
 
-os.mkdir(prefix+exp_name)
+
 
 for _ in range(num_workers):
-	subprocess.Popen(["python", "data_collection/behavioral_cloning.py", str(exp_name), str(max_num)])
+	subprocess.Popen(["python", "data_collection/behavioral_cloning.py", str(exp_name), cuda, str(max_num)])
 
 

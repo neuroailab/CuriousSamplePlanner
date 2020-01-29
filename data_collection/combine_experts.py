@@ -4,7 +4,7 @@ import numpy as np
 
 # Constants
 pathname = "./data_collection/"
-exp_name = "first_attempt"
+exp_name = "trajs_threeblocks"
 trajectory_length = 8
 
 # First, get all of the files

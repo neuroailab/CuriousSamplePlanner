@@ -166,7 +166,7 @@ class Planner():
 				start_node = self.graph.add_node(ss, None, None, None)
 				self.reset_world_model()
 
-				if self.experiment_dict['param_noise'] and len(self.memory) >= self.experiment_dict['batch_size']:
+				if self.experiment_dict['enable_asm'] and self.experiment_dict['param_noise'] and len(self.memory) >= self.experiment_dict['batch_size']:
 					episode_transitions = self.memory.memory[self.memory.position-self.experiment_dict['batch_size']:self.memory.position]
 					states = torch.cat([transition[0] for transition in episode_transitions], 0)
 					unperturbed_actions = self.agent.select_action(states, None, None)
@@ -174,11 +174,11 @@ class Planner():
 					ddpg_dist = ddpg_distance_metric(perturbed_actions.detach().cpu().numpy(), unperturbed_actions.detach().cpu().numpy())
 					self.param_noise.adapt(ddpg_dist)
 
-				if self.experiment_dict['ou_noise']: 
+				if self.experiment_dict['enable_asm'] and self.experiment_dict['ou_noise']: 
 					self.ounoise.scale = (self.experiment_dict['noise_scale'] - self.experiment_dict['final_noise_scale']) * max(0, self.experiment_dict['exploration_end'] - i_episode) / self.experiment_dict['exploration_end'] + self.experiment_dict['final_noise_scale']
 					self.ounoise.reset()
 
-			if len(self.memory) > self.experiment_dict['batch_size'] and total_numsteps%self.experiment_dict['update_interval']==0:
+			if self.experiment_dict['enable_asm'] and len(self.memory) > self.experiment_dict['batch_size'] and total_numsteps%self.experiment_dict['update_interval']==0:
 				for _ in range(self.experiment_dict['updates_per_step']):
 					transitions = self.memory.sample(self.experiment_dict['batch_size'])
 					transitions = [[opt_cuda(i) for i in r] for r in transitions]

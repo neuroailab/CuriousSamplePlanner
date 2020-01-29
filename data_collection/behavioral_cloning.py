@@ -139,4 +139,8 @@ def main(exp_id="no_expid", load_id="no_loadid", max_num = 64):  # control | exe
 
 if __name__ == '__main__':
     exp_id = str(sys.argv[1])
-    main(exp_id=exp_id, load_id="", max_num=int(sys.argv[2]))
+    cuda = str(sys.argv[2])
+    main(exp_id=exp_id, load_id="", max_num=int(sys.argv[3]))
+
+
+

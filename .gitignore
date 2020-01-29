@@ -1,4 +1,5 @@
 solution_data/*
+data_collection/solution_data/*
 trained_models
 __pycache__
 tasks/__pycache__

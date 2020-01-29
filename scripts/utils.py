@@ -43,7 +43,10 @@ def opt_cuda(t):
 		for argv in sys.argv:
 			if(argv.isdigit()):
 				cuda="cuda:"+str(sys.argv[2])
-		return t.cuda(cuda)
+		if(str(sys.argv[2]) == "-1"):
+			return t
+		else:
+			return t.cuda(cuda)
 	else:
 		return t
 

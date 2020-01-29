@@ -3,9 +3,9 @@ import torch
 import numpy as np
 
 # Constants
-pathname = "./data_collection/"
+pathname = "./data_collection/solution_data/"
 exp_name = "trajs_threeblocks"
-trajectory_length = 8
+trajectory_length = 128
 
 # First, get all of the files
 from os import listdir

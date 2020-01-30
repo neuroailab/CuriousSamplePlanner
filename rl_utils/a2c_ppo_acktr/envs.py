@@ -102,7 +102,7 @@ def make_vec_envs(env_name,
         if gamma is None:
             envs = VecNormalize(envs, ret=False)
         else:
-            envs = VecNormalize(envs, gamma=gamma)
+            envs = VecNormalize(envs, gamma=gamma, ret=False)
 
     envs = VecPyTorch(envs, device)
 

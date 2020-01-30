@@ -226,7 +226,6 @@ def main(exp_id="no_expid", load_id="no_loadid"):
 
             # Obser reward and next obs
             obs, reward, done, infos = envs.step(action)
-
             episode_rewards.append(reward.item())
             
             # If done then clean the history of observations.

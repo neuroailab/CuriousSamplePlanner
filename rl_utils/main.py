@@ -58,7 +58,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "save_interval": 100,
             "eval_interval": None,
             "num_env_steps": 10e6,
-            "expert_examples": 32,
+            "expert_examples": 16,
             # "env_name": "HalfCheetah-v2",
             "env_name": "ThreeBlocks",
             "log_dir": "/tmp/gym/",

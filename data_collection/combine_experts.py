@@ -55,7 +55,7 @@ total_states = np.concatenate(traj_states, axis=0)
 total_actions = np.concatenate(traj_actions, axis=0)
 total_rewards = np.concatenate(traj_rewards, axis=0)
 total_lens = np.array(traj_lens)
-print(total_lens)
+print("Num expert examples:"+str(len(total_lens)))
 
 data = {
 	'states': torch.from_numpy(total_states).float(),

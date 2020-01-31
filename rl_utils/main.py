@@ -41,7 +41,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "gail_lr": 1e-3,
             "eps": 1e-5,
             "alpha": 0.99,
-            "gamma": 0.5,
+            "gamma": 0.8,
             "use_gae": True,
             "gae_lambda": 0.95,
             "entropy_coef": 0,
@@ -58,7 +58,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "save_interval": 100,
             "eval_interval": None,
             "num_env_steps": 10e6,
-            "expert_examples": 16,
+            "expert_examples": 40,
             # "env_name": "HalfCheetah-v2",
             "env_name": "ThreeBlocks",
             "log_dir": "/tmp/gym/",
@@ -145,7 +145,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
     device = torch.device(opt_cuda_str() if args.cuda else "cpu")
 
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
-                         args.gamma, args.log_dir, device, False, experiment_dict = experiment_dict)
+                         args.gamma, args.log_dir, device, True, experiment_dict = experiment_dict)
 
     actor_critic = opt_cuda(Policy(
         envs.observation_space.shape,
@@ -205,12 +205,10 @@ def main(exp_id="no_expid", load_id="no_loadid"):
 
     episode_rewards = deque(maxlen=1000)
     episode_gail_losses = deque(maxlen=1000)
-
     start = time.time()
     num_updates = int(
         args.num_env_steps) // args.num_steps // args.num_processes
     for j in range(num_updates):
-
         if args.use_linear_lr_decay:
             # decrease learning rate linearly
             utils.update_linear_schedule(
@@ -226,6 +224,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
 
             # Obser reward and next obs
             obs, reward, done, infos = envs.step(action)
+
             episode_rewards.append(reward.item())
             
             # If done then clean the history of observations.

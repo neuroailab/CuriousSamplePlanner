@@ -3,7 +3,7 @@ import os
 import shutil
 
 
-max_num = 2048
+max_num = 4096
 num_workers = 10
 prefix  = "./data_collection/solution_data/"
 exp_name = "trajs_threeblocks"

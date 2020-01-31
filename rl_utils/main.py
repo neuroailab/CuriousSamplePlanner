@@ -37,11 +37,11 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "gail_batch_size": 128,
             "gail_epoch": 5,
             "lr": 3e-4,
-            "dataset_name": "trajs_theeblocks_clean.pt",
+            "dataset_name": "trajs_twoblocks.pt",
             "gail_lr": 1e-3,
             "eps": 1e-5,
             "alpha": 0.99,
-            "gamma": 0.8,
+            "gamma": 0.7,
             "use_gae": True,
             "gae_lambda": 0.95,
             "entropy_coef": 0,
@@ -58,7 +58,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "save_interval": 100,
             "eval_interval": None,
             "num_env_steps": 10e6,
-            "expert_examples": 40,
+            "expert_examples": 1024,
             # "env_name": "HalfCheetah-v2",
             "env_name": "ThreeBlocks",
             "log_dir": "/tmp/gym/",
@@ -78,11 +78,6 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             'exploration_end': 100, 
             "exp_id": exp_id,
             "load_id": load_id,
-            'noise_scale': 0.3,
-            'final_noise_scale': 0.05,
-            'update_interval' : 1,
-            "enable_asm": False, 
-            "growth_factor": 10,
             "detailed_gmp": False, 
             "adaptive_batch": True,
             "num_training_epochs": 30,
@@ -209,6 +204,10 @@ def main(exp_id="no_expid", load_id="no_loadid"):
     num_updates = int(
         args.num_env_steps) // args.num_steps // args.num_processes
     for j in range(num_updates):
+        total_time = 0
+        stepping_time = 0
+        update_time = 0
+        start = time.time()
         if args.use_linear_lr_decay:
             # decrease learning rate linearly
             utils.update_linear_schedule(
@@ -235,6 +234,10 @@ def main(exp_id="no_expid", load_id="no_loadid"):
                  for info in infos])
             rollouts.insert(obs, recurrent_hidden_states, action,
                             action_log_prob, value, reward, masks, bad_masks)
+
+        total_time+=time.time()-start
+        stepping_time += time.time()-start
+        start = time.time() 
 
         with torch.no_grad():
             next_value = actor_critic.get_value(
@@ -265,6 +268,9 @@ def main(exp_id="no_expid", load_id="no_loadid"):
 
         rollouts.after_update()
 
+        total_time+=time.time()-start
+        update_time += time.time()-start
+
         # save for every interval-th episode or for the last epoch
         if (j % args.save_interval == 0
                 or j == num_updates - 1) and args.save_dir != "":
@@ -280,6 +286,8 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             ], os.path.join(save_path, args.env_name + ".pt"))
 
         if j % args.log_interval == 0 and len(episode_rewards) > 1:
+            print("stepping_time:"+str(stepping_time))
+            print("update_time:"+str(update_time))
 
             experiment_dict['rewards'].append(np.mean(episode_rewards))
             experiment_dict['gail_loss'].append(np.mean(episode_gail_losses))

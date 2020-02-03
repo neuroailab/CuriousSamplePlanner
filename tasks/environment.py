@@ -42,6 +42,7 @@ class Spec():
 
 class Environment():
     def __init__(self, experiment_dict):
+        self.dt = 0
         self.nsamples_per_update = experiment_dict['nsamples_per_update']
         self.detailed_gmp = experiment_dict['detailed_gmp']
         self.training = experiment_dict['training']
@@ -249,7 +250,7 @@ class Environment():
         reward = -0.2
         done = False
         pre_stable_state = self.get_current_config()
-        self.run_until_stable(dt=0)
+        self.run_until_stable(dt=self.dt)
         time.sleep(0.01)
         post_stable_state = self.get_current_config()
         if(terminate_unreachable and any([self.macroaction.object_unreachable(obj) for obj in self.objects])):

@@ -10,6 +10,11 @@ import pickle
 import collections
 from CuriousSamplePlanner.planning_pybullet.motion.motion_planners.discrete import astar
 import sys
+from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
+    Pose, Point, Euler, set_default_camera, stable_z, \
+    BLOCK_URDF, load_model, wait_for_user, disconnect, DRAKE_IIWA_URDF, user_input, update_state, disable_real_time,inverse_kinematics,end_effector_from_body,approach_from_grasp, get_joints, get_joint_positions
+
+
 
 # Planners
 from CuriousSamplePlanner.trainers.state_estimation_planner import StateEstimationPlanner
@@ -19,19 +24,13 @@ from CuriousSamplePlanner.trainers.random_state_embedding_planner import RandomS
 from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.agent.planning_agent import PlanningAgent
 
-
-def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
-
-
-    # load = "found_path.pkl"
-    load = None
-
+def new_exp_dict(exp_id, load_id, model):
     # Set up the hyperparameters
     experiment_dict = {
         # Hyps
-        "task": "FiveBlocks",
-        "policy": "LearningPolicy",
-        "policy_path": "/mnt/fs0/arc11_2/policy_data_new/normalize_returns_4_update=1/",
+        "task": "ThreeBlocks",
+        "policy": "FixedPolicy",
+        "policy_path": model,
         "return_on_solution": True,
         "learning_rate": 5e-5,  
         "sample_cap": 1e7, 
@@ -72,7 +71,14 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "num_sampled_nodes": 0,
         "num_graph_nodes": 0,
     }
-
+    adaptive_batch_lr = {
+        "StateEstimationPlanner": 0.003,
+        # "RandomStateEmbeddingPlanner": 0.00005,
+        "RandomStateEmbeddingPlanner": 1,
+        "EffectPredictionPlanner": 0.001,
+        "RandomSearchPlanner": 0 
+    }
+    experiment_dict["loss_threshold"] = adaptive_batch_lr[experiment_dict["mode"]]
 
     if(torch.cuda.is_available()):
         prefix = "/mnt/fs0/arc11_2/solution_data/"
@@ -81,45 +87,49 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
 
     experiment_dict['exp_path'] = prefix + experiment_dict["exp_id"]
     experiment_dict['load_path'] = prefix + experiment_dict["load_id"]
-    #experiment_dict['exp_path'] = "example_images/" + experiment_dict["exp_id"]
-    #experiment_dict['load_path'] = 'example_images/' + experiment_dict["load_id"]
-    adaptive_batch_lr = {
-        "StateEstimationPlanner": 0.003,
-        "RandomStateEmbeddingPlanner": 0.00005,
-        # "RandomStateEmbeddingPlanner": 1,
-        "EffectPredictionPlanner": 0.001,
-        "RandomSearchPlanner": 0 
-    }
-    experiment_dict["loss_threshold"] = adaptive_batch_lr[experiment_dict["mode"]]
-    PC = getattr(sys.modules[__name__], experiment_dict['mode'])
-    planner = PC(experiment_dict)
-    
-    if (load == None):
-        if (os.path.isdir(experiment_dict['exp_path'])):
-            shutil.rmtree(experiment_dict['exp_path'])
 
-        os.mkdir(experiment_dict['exp_path'])
-        
-        graph, plan, experiment_dict = planner.plan()
+    return experiment_dict
 
-        # Save the graph so we can load it back in later
-        if(graph is not None):
-            graph_filehandler = open(experiment_dict['exp_path'] + "/found_graph.pkl", 'wb')
-            filehandler = open(experiment_dict['exp_path'] + "/found_path.pkl", 'wb')
+def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
 
-            pickle.dump(graph, graph_filehandler)
-            pickle.dump(plan, filehandler)
 
-        stats_filehandler = open(experiment_dict['exp_path'] + "/stats.pkl", 'wb')
-        pickle.dump(experiment_dict, stats_filehandler)
+    # load = "found_path.pkl"
+    load = None
+    NUM_SAMPLES = 50
+    models = ["/mnt/fs0/arc11_2/policy_data_new/single_step_4_update="+str(i)+"/" for i in range(100, 110, 5)]
+    experiment_dict = new_exp_dict(exp_id, load_id, models[0])
 
-    else:
-        # Find the plan and execute it
-        filehandler = open(experiment_dict['exp_path'] + '/' + load, 'rb')
-        plan = pickle.load(filehandler)
+    if (os.path.isdir(experiment_dict['exp_path'])):
+        shutil.rmtree(experiment_dict['exp_path'])
 
-        agent = PlanningAgent(planner.environment)
-        agent.multistep_plan(plan)
+    os.mkdir(experiment_dict['exp_path'])
+
+    means = []
+    stds = []
+    for model in models:
+        print("Collecting from model: "+str(model))
+        samples = []
+        for i in range(NUM_SAMPLES):
+            print("Num: "+str(i))
+            experiment_dict = new_exp_dict(exp_id, load_id, model)
+            PC = getattr(sys.modules[__name__], experiment_dict['mode'])
+            planner = PC(experiment_dict)
+            graph, plan, experiment_dict = planner.plan()
+            samples.append(experiment_dict['num_sampled_nodes'])
+            disconnect()
+        print(samples)
+        means.append(str(np.mean(np.array(samples))))
+        stds.append(str(np.std(np.array(samples))))
+
+        print("Mean:"+str(means[-1])+", Std:"+str(stds[-1]))
+
+    print("Final Results")
+    print(means)
+    print(stds)
+
+
+
+
 
 
 if __name__ == '__main__':

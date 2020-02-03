@@ -31,9 +31,11 @@ except ImportError:
     pass
 
 
-def make_env(env_id, seed, rank, log_dir, allow_early_resets, experiment_dict={}):
+def make_env(env_id, seed, rank, log_dir, allow_early_resets, experiment_dict={}, made_env = None):
     def _thunk():
-        if env_id.startswith("dm"):
+        if(made_env is not None):   
+            env = made_env
+        elif env_id.startswith("dm"):
             _, domain, task = env_id.split('.')
             env = dm_control2gym.make(domain_name=domain, task_name=task)
         elif(env_id == "ThreeBlocks"):
@@ -87,9 +89,10 @@ def make_vec_envs(env_name,
                   device,
                   allow_early_resets,
                   num_frame_stack=None,
-                  experiment_dict={}):
+                  experiment_dict={},
+                  made_env = None):
     envs = [
-        make_env(env_name, seed, i, log_dir, allow_early_resets, experiment_dict=experiment_dict)
+        make_env(env_name, seed, i, log_dir, allow_early_resets, experiment_dict=experiment_dict, made_env = made_env)
         for i in range(num_processes)
     ]
 

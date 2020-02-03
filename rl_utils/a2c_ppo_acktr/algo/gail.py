@@ -136,7 +136,6 @@ class ExpertDataset(torch.utils.data.Dataset):
 
         self.i2traj_idx = {}
         self.i2i = {}
-        print(self.trajectories['lengths'])
         self.length = int(self.trajectories['lengths'].sum().item())
         
         traj_idx = 0

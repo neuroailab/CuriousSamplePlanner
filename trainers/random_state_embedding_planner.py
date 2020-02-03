@@ -46,7 +46,7 @@ class RandomStateEmbeddingPlanner(Planner):
 
 	def update_novelty_scores(self):
 		if(len(self.graph)>0 and self.experiment_dict["node_sampling"] == "softmax"):
-			for _, (inputs, labels, prestates, node_key, index, _) in enumerate(DataLoader(self.graph, batch_size=self.batch_size, shuffle=True, num_workers=0)):
+			for _, (inputs, labels, prestates, node_key, index, _) in enumerate(DataLoader(self.graph, batch_size=self.experiment_dict['batch_size'], shuffle=True, num_workers=0)):
 				# TODO: Turn this into a data provider
 				outputs = opt_cuda(self.worldModel(opt_cuda(labels)).type(torch.FloatTensor))
 				targets = opt_cuda(labels.type(torch.FloatTensor))[:, self.transform]
@@ -64,13 +64,14 @@ class RandomStateEmbeddingPlanner(Planner):
 		# 	pickle.dump(self.worldModel, fw)
 		# with open(self.exp_path + "/actor_critic.pkl", "wb") as fa:
 		# 	pickle.dump(self.environment.actor_critic, fa)
-		with open(self.exp_path + "/exp_dict.pkl", "wb") as fa:
+		
+		with open(self.experiment_dict['exp_path'] + "/exp_dict.pkl", "wb") as fa:
 			pickle.dump(self.experiment_dict, fa)
 			fa.close()
 
 	def train_world_model(self, run_index):
-		for epoch in range(self.num_training_epochs):
-			for next_loaded in enumerate(DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
+		for epoch in range(self.experiment_dict['num_training_epochs']):
+			for next_loaded in enumerate(DataLoader(self.experience_replay, batch_size=self.experiment_dict['batch_size'], shuffle=True, num_workers=0)):
 				_, batch = next_loaded
 				inputs, labels, prestates, acts, feasible, _, index = batch
 
@@ -104,7 +105,7 @@ class RandomStateEmbeddingPlanner(Planner):
 		whole_indices = []
 		whole_feasibles = []
 		for _, batch in enumerate(
-				DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True, num_workers=0)):
+				DataLoader(self.experience_replay, batch_size=self.experiment_dict['batch_size'], shuffle=True, num_workers=0)):
 			inputs, labels, prestates, acts, feasible, _, index = batch
 
 			#Convert to cuda
@@ -117,7 +118,7 @@ class RandomStateEmbeddingPlanner(Planner):
 			targets = labels[:, self.transform]
 			outputs = self.worldModel(labels)
 			losses = []
-			for i in range(self.batch_size):
+			for i in range(self.experiment_dict['batch_size']):
 				l = self.criterion(outputs[i, self.environment.predict_mask], targets[i,:])
 				
 				losses.append(torch.unsqueeze(l,dim=0))

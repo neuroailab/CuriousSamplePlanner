@@ -12,22 +12,18 @@ import torch.nn.functional as F
 import torch.optim as optim
 import shutil
 import sys
-from a2c_ppo_acktr import algo, utils
-from a2c_ppo_acktr.algo import gail
-from a2c_ppo_acktr.arguments import get_args
-from a2c_ppo_acktr.envs import make_vec_envs
-from a2c_ppo_acktr.model import Policy
-from a2c_ppo_acktr.storage import RolloutStorage
+from CuriousSamplePlanner.rl_utils.a2c_ppo_acktr import algo, utils
+from CuriousSamplePlanner.rl_utils.a2c_ppo_acktr.algo import gail
+from CuriousSamplePlanner.rl_utils.a2c_ppo_acktr.arguments import get_args
+from CuriousSamplePlanner.rl_utils.a2c_ppo_acktr.envs import make_vec_envs
+from CuriousSamplePlanner.rl_utils.a2c_ppo_acktr.model import Policy
+from CuriousSamplePlanner.rl_utils.a2c_ppo_acktr.storage import RolloutStorage
 from evaluation import evaluate
 from CuriousSamplePlanner.scripts.utils import *
-
-
 
 class Args:
     def __init__(self, **entries):
         self.__dict__.update(entries)
-
-
 
 def main(exp_id="no_expid", load_id="no_loadid"):
     experiment_dict = {
@@ -41,7 +37,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "gail_lr": 1e-3,
             "eps": 1e-5,
             "alpha": 0.99,
-            "gamma": 0.7,
+            "gamma": 0.5,
             "use_gae": True,
             "gae_lambda": 0.95,
             "entropy_coef": 0,
@@ -50,12 +46,13 @@ def main(exp_id="no_expid", load_id="no_loadid"):
             "seed": 1,
             "cuda_deterministic": False,
             "num_processes": 1,
+            "pool_size": 1,
             "num_steps": 1024,
             "ppo_epoch": 10,
             "num_mini_batch": 32,
             "clip_param": 0.2,
             "log_interval": 1,
-            "save_interval": 100,
+            "save_interval": 1,
             "eval_interval": None,
             "num_env_steps": 10e6,
             "expert_examples": 1024,
@@ -108,12 +105,14 @@ def main(exp_id="no_expid", load_id="no_loadid"):
 
     if(torch.cuda.is_available()):
         prefix = "/mnt/fs0/arc11_2/solution_data_new/"
+        policy_prefix = "/mnt/fs0/arc11_2/policy_data_new/"
     else:
         prefix = "./solution_data/"
+        policy_prefix = "./policy_data/"
 
     experiment_dict['exp_path'] = prefix + experiment_dict["exp_id"]
     experiment_dict['load_path'] = prefix + experiment_dict["load_id"]
-
+    experiment_dict['save_dir'] = policy_prefix + experiment_dict["exp_id"]
     if (os.path.isdir(experiment_dict['exp_path'])):
         shutil.rmtree(experiment_dict['exp_path'])
 
@@ -146,8 +145,6 @@ def main(exp_id="no_expid", load_id="no_loadid"):
         envs.observation_space.shape,
         envs.action_space,
         base_kwargs={'recurrent': args.recurrent_policy}))
-
-
 
     if args.algo == 'a2c':
         agent = algo.A2C_ACKTR(
@@ -204,6 +201,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
     num_updates = int(
         args.num_env_steps) // args.num_steps // args.num_processes
     for j in range(num_updates):
+        since = 0
         total_time = 0
         stepping_time = 0
         update_time = 0
@@ -214,6 +212,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
                 agent.optimizer, j, num_updates,
                 agent.optimizer.lr if args.algo == "acktr" else args.lr)
 
+        
         for step in range(args.num_steps):
             # Sample actions
             with torch.no_grad():
@@ -223,9 +222,10 @@ def main(exp_id="no_expid", load_id="no_loadid"):
 
             # Obser reward and next obs
             obs, reward, done, infos = envs.step(action)
+            obs = envs.reset()
 
             episode_rewards.append(reward.item())
-            
+
             # If done then clean the history of observations.
             masks = torch.FloatTensor(
                 [[0.0] if done_ else [1.0] for done_ in done])
@@ -274,7 +274,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):
         # save for every interval-th episode or for the last epoch
         if (j % args.save_interval == 0
                 or j == num_updates - 1) and args.save_dir != "":
-            save_path = os.path.join(args.save_dir, args.algo)
+            save_path = args.save_dir+"_update="+str(j)
             try:
                 os.makedirs(save_path)
             except OSError:

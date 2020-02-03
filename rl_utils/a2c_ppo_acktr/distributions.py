@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from a2c_ppo_acktr.utils import AddBias, init
+from CuriousSamplePlanner.rl_utils.a2c_ppo_acktr.utils import AddBias, init
 from CuriousSamplePlanner.scripts.utils import *
 
 """

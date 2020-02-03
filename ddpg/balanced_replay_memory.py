@@ -27,8 +27,6 @@ class BalancedReplayMemory(object):
 
 
     def sample(self, batch_size):
-        print(len(self.memory_banks[0]))
-        print(len(self.memory_banks[1]))
         returning = []
         for _ in range(batch_size):
             index = np.random.choice(np.arange(len(self.memory_banks)), p=[1-self.split, self.split])

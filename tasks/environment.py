@@ -253,6 +253,7 @@ class Environment():
         self.run_until_stable(dt=self.dt)
         time.sleep(0.01)
         post_stable_state = self.get_current_config()
+        next_state = torch.unsqueeze(torch.tensor(post_stable_state), 0).type(torch.FloatTensor)
         if(terminate_unreachable and any([self.macroaction.object_unreachable(obj) for obj in self.objects])):
             print("Block is out of reach. Planning will never complete.")
             sys.exit(1)
@@ -266,7 +267,6 @@ class Environment():
         else:
             inputs = torch.tensor([0])
 
-        next_state = torch.unsqueeze(torch.tensor(self.get_current_config()), 0).type(torch.FloatTensor)
         # reward = opt_cuda(torch.unsqueeze(torch.tensor(reward), 0).type(torch.FloatTensor))
         # print(reward)
 

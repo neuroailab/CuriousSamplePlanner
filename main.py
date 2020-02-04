@@ -30,7 +30,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     experiment_dict = {
         # Hyps
         "task": "FiveBlocks",
-        "policy": "LearningPolicy",
+        "policy": "RandomPolicy",
         "policy_path": "/mnt/fs0/arc11_2/policy_data_new/normalize_returns_4_update=1/",
         "return_on_solution": True,
         "learning_rate": 5e-5,  
@@ -85,7 +85,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     #experiment_dict['load_path'] = 'example_images/' + experiment_dict["load_id"]
     adaptive_batch_lr = {
         "StateEstimationPlanner": 0.003,
-        "RandomStateEmbeddingPlanner": 0.00005,
+        "RandomStateEmbeddingPlanner": 0.0005,
         # "RandomStateEmbeddingPlanner": 1,
         "EffectPredictionPlanner": 0.001,
         "RandomSearchPlanner": 0 

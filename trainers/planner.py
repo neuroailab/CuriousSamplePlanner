@@ -74,15 +74,28 @@ class Planner():
 		mean_reward = sum(self.experiment_dict['rewards'][-128:])/len(self.experiment_dict['rewards'][-128:])
 		print("Sampled: "+str(self.experiment_dict['num_sampled_nodes'])+"\t Graph Size: "+str(self.experiment_dict['num_graph_nodes'])+"\t WM Loss: "+str(self.experiment_dict['world_model_losses'][-1])+"\t Feasibility: "+str(self.experiment_dict['feasibility'][-1])+"\t Reward: "+str(mean_reward))
 		# print("Sampled: "+str(self.experiment_dict['num_sampled_nodes'])+"\t Graph Size: "+str(self.experiment_dict['num_graph_nodes'])+"\t WM Loss: "+str(self.experiment_dict['world_model_losses'][-1]))
+	
+	def save_params(self):
+		# Save the updated models
+		# with open(self.exp_path + "/worldModel.pkl", 'wb') as fw:
+		# 	pickle.dump(self.worldModel, fw)
+		# with open(self.exp_path + "/actor_critic.pkl", "wb") as fa:
+		# 	pickle.dump(self.environment.actor_critic, fa)
+		
+		with open(self.experiment_dict['exp_path'] + "/exp_dict.pkl", "wb") as fa:
+			pickle.dump(self.experiment_dict, fa)
+			fa.close()
+
+		graph_filehandler = open(experiment_dict['exp_path'] + "/found_graph.pkl", 'wb')
+		pickle.dump(self.graph, graph_filehandler)
 
 	def plan(self):
 
-		# Set up the starting position
-
+		# Set up fthe starting position
 		self.policy.reset()
-		start_state = torch.tensor(self.environment.get_start_state())
-		start_node = self.graph.add_node(start_state, None, None, None)
 		run_index = 0
+		start_state = torch.tensor(self.environment.get_start_state())
+		start_node = self.graph.add_node(start_state, None, None, None, run_index=run_index)
 		total_numsteps = 0
 		feature = torch.zeros((1, 3, 84, 84))
 		i_episode = 0
@@ -113,10 +126,11 @@ class Planner():
 
 				# Add the goal node to the graph
 				ntarget = torch.squeeze(next_state).cpu().numpy()
+				max_z_pos = max([ntarget[2], ntarget[8], ntarget[14]])
 				npretarget = prestate.cpu().numpy()
 				naction = action.cpu().numpy()
-				goal_node = self.graph.add_node(ntarget, npretarget, naction, parent.node_key, command = command)
-
+				goal_node = self.graph.add_node(ntarget, npretarget, naction, parent.node_key, command = command, run_index=run_index)
+				max_z_pos = max([goal_node.config[2], goal_node.config[8], goal_node.config[14]])
 				# Reset the number of graph nodes
 				self.experiment_dict["num_graph_nodes"] = 0
 
@@ -127,7 +141,7 @@ class Planner():
 					# Found a reward, creating a new graph with a new start node
 					self.graph = PlanGraph(environment=self.environment, node_sampling = self.experiment_dict['node_sampling'])
 					ss = self.policy.reset().cpu().numpy()[0]
-					start_node = self.graph.add_node(ss, None, None, None)
+					start_node = self.graph.add_node(ss, None, None, None, run_index=run_index)
 					self.reset_world_model()
 					self.policy.got_reward()
 		
@@ -159,8 +173,9 @@ class Planner():
 				self.experiment_dict['world_model_losses'].append(average_loss)
 				self.print_exp_dict(verbose=False)
 
-				# # Adaptive batch
+				# Adaptive batch
 				if (average_loss <= self.experiment_dict["loss_threshold"] or not self.experiment_dict['adaptive_batch']):
+					run_index+=1
 					added_base_count = 0
 					for en_index, hl_index in enumerate(high_loss_indices):
 						input, target, pretarget, action, _, parent_index, _ = self.experience_replay.__getitem__(hl_index)
@@ -178,7 +193,7 @@ class Planner():
 						# 					picture)
 
 
-						self.graph.add_node(ntarget, npretarget, action.numpy(), parent_index, command = command)
+						self.graph.add_node(ntarget, npretarget, action.numpy(), parent_index, command = command, run_index = run_index)
 						added_base_count += 1
 						if (added_base_count == self.experiment_dict["growth_factor"]):
 							break
@@ -197,7 +212,6 @@ class Planner():
 
 			if(self.experiment_dict["num_sampled_nodes"] > self.experiment_dict['sample_cap']):
 				return None, None, self.experiment_dict
-			run_index+=1
 
 		return self.graph, plan, self.experiment_dict
 

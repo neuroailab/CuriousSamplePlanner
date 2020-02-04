@@ -58,16 +58,6 @@ class RandomStateEmbeddingPlanner(Planner):
 					states.append(labels[node, self.environment.predict_mask])
 				self.graph.set_novelty_scores(index, losses)
 				
-	def save_params(self):
-		# Save the updated models
-		# with open(self.exp_path + "/worldModel.pkl", 'wb') as fw:
-		# 	pickle.dump(self.worldModel, fw)
-		# with open(self.exp_path + "/actor_critic.pkl", "wb") as fa:
-		# 	pickle.dump(self.environment.actor_critic, fa)
-		
-		with open(self.experiment_dict['exp_path'] + "/exp_dict.pkl", "wb") as fa:
-			pickle.dump(self.experiment_dict, fa)
-			fa.close()
 
 	def train_world_model(self, run_index):
 		for epoch in range(self.experiment_dict['num_training_epochs']):

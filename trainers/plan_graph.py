@@ -32,8 +32,9 @@ from scipy.special import softmax
 
 
 class GraphNode():
-	def __init__(self, config, preconfig, action, command=None, node_key=0):
+	def __init__(self, config, preconfig, action, command=None, node_key=0, run_index=0):
 		self.config = config
+		self.run_index = run_index
 		self.preconfig = preconfig
 		self.node_key = node_key
 		self.action = action
@@ -96,9 +97,9 @@ class PlanGraph(Dataset):
 		for loss_index, node_index in enumerate(index):
 			list(self.plan_graph.keys())[node_index+1].set_novelty_score(losses[loss_index].item())
 
-	def add_node(self, conf, preconf, action, parent_index, command=None):
+	def add_node(self, conf, preconf, action, parent_index, command=None, run_index=0):
 		parent = self.find_node(parent_index)
-		new_node = GraphNode(conf, preconf, action, node_key=self.node_key, command=command)
+		new_node = GraphNode(conf, preconf, action, node_key=self.node_key, command=command, run_index=run_index)
 		self.plan_graph[new_node] = []
 		if(parent != None):
 			self.plan_graph[parent].append(new_node)

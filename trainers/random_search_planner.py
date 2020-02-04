@@ -32,9 +32,6 @@ class RandomSearchPlanner(Planner):
 
 	def update_novelty_scores(self):
 		pass	
-
-	def save_params(self):
-		pass
 		
 	def train_world_model(self, run_index):
 		pass

@@ -39,7 +39,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         'actor_lr': 1e-4,
         'critic_lr': 1e-3,
         "node_sampling": "uniform",
-        "mode": "RandomStateEmbeddingPlanner",
+        "mode": "RandomSearchPlanner",
         "feasible_training": True,
         "nsamples_per_update": 1024,
         "training": True,
@@ -88,7 +88,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "RandomStateEmbeddingPlanner": 0.0005,
         # "RandomStateEmbeddingPlanner": 1,
         "EffectPredictionPlanner": 0.001,
-        "RandomSearchPlanner": 0 
+        "RandomSearchPlanner": 100 
     }
     experiment_dict["loss_threshold"] = adaptive_batch_lr[experiment_dict["mode"]]
     PC = getattr(sys.modules[__name__], experiment_dict['mode'])

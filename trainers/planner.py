@@ -86,7 +86,7 @@ class Planner():
 			pickle.dump(self.experiment_dict, fa)
 			fa.close()
 
-		graph_filehandler = open(experiment_dict['exp_path'] + "/found_graph.pkl", 'wb')
+		graph_filehandler = open(self.experiment_dict['exp_path'] + "/found_graph.pkl", 'wb')
 		pickle.dump(self.graph, graph_filehandler)
 
 	def plan(self):

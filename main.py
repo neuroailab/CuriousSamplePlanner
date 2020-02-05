@@ -31,7 +31,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     # Set up the hyperparameters
     experiment_dict = {
         # Hyps
-        "task": "FiveBlocks",
+        "task": "BookShelf",
         "policy": "RandomPolicy",
         "policy_path": "/mnt/fs0/arc11_2/policy_data_new/normalize_returns_4_update=1/",
         "return_on_solution": True,

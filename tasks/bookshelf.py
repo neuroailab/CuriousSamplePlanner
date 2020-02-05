@@ -126,13 +126,6 @@ class BookShelf(Environment):
 			return [self.blue_rod_1, self.blue_rod_2]
 
 
-	def get_action_type(self, ma_index):
-		if(ma_index<2):
-			return "teleport"
-		else:
-			return "link"
-
-
 	def get_current_config(self):
 		b1pos, b1quat = p.getBasePositionAndOrientation(self.blue_rod_1)
 		b2pos, b2quat = p.getBasePositionAndOrientation(self.blue_rod_2)
@@ -144,7 +137,9 @@ class BookShelf(Environment):
 		booke = p.getEulerFromQuaternion(bookquat)
 
 		# print("getting config: "+str(int(self.current_constraint_id is not None)))
-		return np.array(list(b1pos+b1e+b2pos+b2e+bookpos+booke)+self.macroaction.link_status)
+		returning_state =  np.array(list(b1pos+b1e+b2pos+b2e+bookpos+booke)+self.macroaction.link_status)
+		print("Getting current config: "+str(returning_state.shape))
+		return returning_state
 
 	@property
 	def fixed(self):
@@ -154,10 +149,16 @@ class BookShelf(Environment):
 		collision = True
 		z = 0.02
 		while(collision):
-			conf = np.array(self.reachable_pos(z=z)+[0, 0, random.uniform(-math.pi, math.pi)]+self.reachable_pos(z=z)+[0, 0, random.uniform(-math.pi, math.pi)]+self.book_pos+self.book_rot+self.macroaction.link_status)
-			self.set_state(conf)
-			collision = check_pairwise_collisions([self.blue_rod_1, self.blue_rod_2, self.shelf])
+			poses = [self.macroaction.reparameterize(self.objects[0], np.random.uniform(low=-1, high=1, size=4)) for _ in range(2)]
+			pos1, pos2 = [pose[0] for pose in poses]
+			state = State(len(self.objects), len(self.static_objects), len(self.macroaction.link_status))
+			state.set_position(0, pos1[0], pos1[1], z)
+			state.set_position(1, pos2[0], pos2[1], z)
+			self.set_state(state.config)
+			collision = check_pairwise_collisions(self.objects)
 
-		return conf
+		print("Returnings start state")
+		print(len(state.config))
+		return state.config 
 		  
 

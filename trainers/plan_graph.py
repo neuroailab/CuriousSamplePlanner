@@ -62,8 +62,14 @@ class PlanGraph(Dataset):
 		else:
 			self.plan_graph = collections.OrderedDict()
 
+	def l2dist(self, conf1, conf2):
+		return np.sqrt(np.sum(np.power(np.array(conf1)-np.array(conf2), 2)))
+
 	def save(self, save_path):
 		np.save(save_path, np.array(self.plan_graph))
+
+	def nn(self, config):
+		return list(self.plan_graph.keys())[np.argmin(np.array([self.l2dist(n.config, config) for n in self.plan_graph.keys()]))]
 
 	def expand_node(self, nselect, priority=0.0001):
 		if(self.selection_strategy == "uniform"):

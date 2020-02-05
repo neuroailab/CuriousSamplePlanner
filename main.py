@@ -15,6 +15,8 @@ import sys
 from CuriousSamplePlanner.trainers.state_estimation_planner import StateEstimationPlanner
 from CuriousSamplePlanner.trainers.random_search_planner import RandomSearchPlanner
 from CuriousSamplePlanner.trainers.effect_prediction_planner import EffectPredictionPlanner
+from CuriousSamplePlanner.trainers.RRTPlanner import RRTPlanner
+
 from CuriousSamplePlanner.trainers.random_state_embedding_planner import RandomStateEmbeddingPlanner
 from CuriousSamplePlanner.scripts.utils import *
 from CuriousSamplePlanner.agent.planning_agent import PlanningAgent
@@ -39,7 +41,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         'actor_lr': 1e-4,
         'critic_lr': 1e-3,
         "node_sampling": "uniform",
-        "mode": "RandomSearchPlanner",
+        "mode": "RRTPlanner",
         "feasible_training": True,
         "nsamples_per_update": 1024,
         "training": True,
@@ -83,6 +85,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     experiment_dict['load_path'] = prefix + experiment_dict["load_id"]
     #experiment_dict['exp_path'] = "example_images/" + experiment_dict["exp_id"]
     #experiment_dict['load_path'] = 'example_images/' + experiment_dict["load_id"]
+
     adaptive_batch_lr = {
         "StateEstimationPlanner": 0.003,
         "RandomStateEmbeddingPlanner": 0.0005,
@@ -90,7 +93,9 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         "EffectPredictionPlanner": 0.001,
         "RandomSearchPlanner": 100 
     }
-    experiment_dict["loss_threshold"] = adaptive_batch_lr[experiment_dict["mode"]]
+    if(experiment_dict["mode"] in adaptive_batch_lr.keys()):
+        experiment_dict["loss_threshold"] = adaptive_batch_lr[experiment_dict["mode"]]
+
     PC = getattr(sys.modules[__name__], experiment_dict['mode'])
     planner = PC(experiment_dict)
     

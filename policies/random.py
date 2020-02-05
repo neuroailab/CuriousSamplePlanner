@@ -9,5 +9,5 @@ class RandomPolicy(EnvPolicy):
 		super(RandomPolicy, self).__init__(*args)
 
 	def select_action(self, obs):
-		action = torch.unsqueeze(torch.tensor(np.random.uniform(low=-1, high=1, size=self.environment.action_space_size)), dim=0).type(torch.FloatTensor)
+		action = opt_cuda(torch.unsqueeze(torch.tensor(np.random.uniform(low=-1, high=1, size=self.environment.action_space_size)), dim=0).type(torch.FloatTensor))
 		return action

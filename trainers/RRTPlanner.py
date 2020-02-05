@@ -71,6 +71,19 @@ class RRTPlanner():
 		self.graph = PlanGraph(environment=self.environment, node_sampling = self.experiment_dict['node_sampling'])
 		super(RRTPlanner, self).__init__()
 
+	def save_params(self):
+		# Save the updated models
+		# with open(self.exp_path + "/worldModel.pkl", 'wb') as fw:
+		# 	pickle.dump(self.worldModel, fw)
+		# with open(self.exp_path + "/actor_critic.pkl", "wb") as fa:
+		# 	pickle.dump(self.environment.actor_critic, fa)
+		
+		with open(self.experiment_dict['exp_path'] + "/exp_dict.pkl", "wb") as fa:
+			pickle.dump(self.experiment_dict, fa)
+			fa.close()
+
+		graph_filehandler = open(self.experiment_dict['exp_path'] + "/found_graph.pkl", 'wb')
+		pickle.dump(self.graph, graph_filehandler)
 
 	def plan(self):
 		print("plan")
@@ -81,9 +94,10 @@ class RRTPlanner():
 		start_node = self.graph.add_node(start_state, None, None, None, run_index=run_index)
 
 		# Begin RRT loop
+		nodes_added = 0
 		while (True):
 			print("Run_index: "+str(run_index))
-			# Select a random point within the configuration space for the objects (10:30)
+			# Select a random point within the configuration space for the objects
 			sample_config = []
 
 			for obj in self.environment.objects:
@@ -93,13 +107,14 @@ class RRTPlanner():
 				euler=p.getEulerFromQuaternion(quat)
 				sample_config+=list(pos)+list(euler)
 
-			# Find the node that is closest to the sample location (11:00)
+			# Find the node that is closest to the sample location
 			nearest_node = self.graph.nn(sample_config)
 
-			# Sample a bunch of actions from that node (11:30)
+			# Sample a bunch of actions from that node
 			results = []
 			state_action_dict = {}
-			for _ in range(self.experiment_dict["batch_size"]):
+			for _ in range(int(self.experiment_dict["batch_size"]/self.experiment_dict["growth_factor"])):
+				self.environment.set_state(nearest_node.config)
 				action = self.policy.select_action(sample_config)
 				result = self.policy.step(torch.squeeze(action))
 				state_action_dict[result[0]] = action
@@ -107,22 +122,22 @@ class RRTPlanner():
 
 			# Sort the results based on proximity to the sample
 			sorted(results, key=lambda result: self.graph.l2dist(result[0], sample_config), reverse=True)
-			# Select the actions that takes you closest to the selected point (12:00)
-			nodes_added = 0
+
+			# Select the actions that takes you closest to the selected point
 			for result in results:
 				(next_state, reward, done, infos) = result
 				action = state_action_dict[result[0]]
-				self.graph.add_node(next_state.detach().cpu().numpy(), next_state.detach().cpu().numpy(), action.detach().cpu().numpy(), sample_config, run_index = run_index)
-				
+				ntarget = torch.squeeze(next_state.detach().cpu()).numpy()
+				naction = torch.squeeze(action.detach().cpu()).numpy()
+				self.graph.add_node(ntarget, ntarget, naction, nearest_node.node_key, run_index = run_index)
 				nodes_added+=1
-				if(nodes_added>=self.experiment_dict["growth_factor"]):
-					break
+				break
 
+			if(nodes_added>=self.experiment_dict["growth_factor"]):
+				nodes_added=0
+				self.save_params()
+				run_index+=1
 
-			# Add the resulting nodes to the graph (12:30)
-
-
-			# Fix all the bugs to get it to work(1:00)
 
 
 		return self.graph, plan, self.experiment_dict

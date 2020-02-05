@@ -121,6 +121,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         means.append(str(np.mean(np.array(samples))))
         stds.append(str(np.std(np.array(samples))))
 
+
         print("Mean:"+str(means[-1])+", Std:"+str(stds[-1]))
 
     print("Final Results")

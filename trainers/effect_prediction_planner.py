@@ -23,12 +23,12 @@ from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
 from CuriousSamplePlanner.tasks.bookshelf import BookShelf
 
 from CuriousSamplePlanner.scripts.utils import *
-from CuriousSamplePlanner.trainers.planner import Planner
+from CuriousSamplePlanner.trainers.CSPPlanner import CSPPlanner
 from CuriousSamplePlanner.trainers.architectures import DynamicsModel
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
 
 
-class EffectPredictionPlanner(Planner):
+class EffectPredictionPlanner(CSPPlanner):
 	def __init__(self, *args):
 		super(EffectPredictionPlanner, self).__init__(*args)
 		self.worldModel = opt_cuda(DynamicsModel(config_size=self.environment.config_size, action_size = self.environment.action_space_size))

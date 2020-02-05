@@ -24,12 +24,12 @@ from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
 from CuriousSamplePlanner.tasks.bookshelf import BookShelf
 
 from CuriousSamplePlanner.scripts.utils import *
-from CuriousSamplePlanner.trainers.planner import Planner
+from CuriousSamplePlanner.trainers.CSPPlanner import CSPPlanner
 from CuriousSamplePlanner.trainers.architectures import WorldModel, SkinnyWorldModel
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
 
 
-class RandomStateEmbeddingPlanner(Planner):
+class RandomStateEmbeddingPlanner(CSPPlanner):
 	def __init__(self, *args):
 		super(RandomStateEmbeddingPlanner, self).__init__(*args)
 		self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))

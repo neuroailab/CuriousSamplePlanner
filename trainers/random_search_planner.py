@@ -21,11 +21,11 @@ from CuriousSamplePlanner.tasks.ball_ramp import BallRamp
 from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
 from CuriousSamplePlanner.tasks.bookshelf import BookShelf
 from CuriousSamplePlanner.scripts.utils import *
-from CuriousSamplePlanner.trainers.planner import Planner
+from CuriousSamplePlanner.trainers.CSPPlanner import CSPPlanner
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
 
 
-class RandomSearchPlanner(Planner):
+class RandomSearchPlanner(CSPPlanner):
 	def __init__(self, *args):
 	   super(RandomSearchPlanner, self).__init__(*args)
 

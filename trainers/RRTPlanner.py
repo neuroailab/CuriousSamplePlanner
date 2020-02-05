@@ -51,7 +51,7 @@ from CuriousSamplePlanner.policies.fixed import FixedPolicy
 from CuriousSamplePlanner.policies.random import RandomPolicy
 from CuriousSamplePlanner.policies.learning import LearningPolicy
 
-class Planner():
+class RRTPlanner():
 	def __init__(self, experiment_dict):
 		self.experiment_dict = experiment_dict
 
@@ -162,7 +162,7 @@ class Planner():
 				self.environment.dt = 0.001
 				self.train_world_model(0)
 				
-				# # Get the losses from all observations
+				# Get the losses from all observations
 				whole_losses, whole_indices, whole_feasibles = self.calc_novelty()
 				sort_args = np.array(whole_losses).argsort()[::-1]
 				high_loss_indices = [whole_indices[p] for p in sort_args]

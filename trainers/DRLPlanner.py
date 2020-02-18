@@ -84,6 +84,7 @@ class DRLPlanner():
 		episode_rewards = deque(maxlen=1000)
 		value_losses = deque(maxlen=10)
 		action_losses = deque(maxlen=10)
+		wm_losses = deque(maxlen=1000)
 		# Create the replay buffer for training world models
 		experience_replay = ExperienceReplayBuffer()
 
@@ -156,7 +157,7 @@ class DRLPlanner():
 						loss = self.criterion(outputs[:, self.environment.predict_mask], labels[:, self.transform])
 						loss.backward()
 						self.optimizer_world.step()
-						self.experiment_dict["world_model_losses"].append(loss.item())
+						wm_losses.append(loss.item())
 
 
 				del experience_replay
@@ -166,6 +167,7 @@ class DRLPlanner():
 				total_num_steps = (j + 1) * self.experiment_dict['num_steps']
 				end = time.time()
 				self.experiment_dict['rewards'].append(np.mean(episode_rewards))
+				self.experiment_dict["world_model_losses"].append(np.mean(wm_losses))
 				print(
 					"Updates {}, num timesteps {}, FPS {} \n Last {} training episodes: mean/median reward {:.3f}/{:.3f}, min/max reward {:.1f}/{:.1f}, Value Loss {:.3f}, Action Loss {:.3f}\n"
 					.format(j, total_num_steps,
@@ -175,6 +177,7 @@ class DRLPlanner():
 							np.max(episode_rewards),
 							np.mean(value_losses),
 							np.mean(action_loss)))
+			if j % self.experiment_dict['save_interval'] == 0 and len(episode_rewards) > 1:
 				stats_filehandler = open(self.experiment_dict['exp_path'] + "/stats.pkl", 'wb')
 				pickle.dump(self.experiment_dict, stats_filehandler)
 

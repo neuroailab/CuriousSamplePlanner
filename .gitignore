@@ -6,3 +6,4 @@ tasks/__pycache__
 trainers/__pycache__
 rl_utils/time_limit_logs
 rl_utils/logs
+rl_ppo_rnd_new/*

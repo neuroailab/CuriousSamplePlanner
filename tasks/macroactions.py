@@ -40,8 +40,8 @@ from CuriousSamplePlanner.scripts.utils import *
 class MacroAction():
 	def __init__(self, macroaction_list=[], *args):
 		self.reachable_max_height = 0.8
-		self.max_reach_horiz = 0.35
-		self.min_reach_horiz = 0.3
+		self.max_reach_horiz = 0.45
+		self.min_reach_horiz = 0.4
 		self.macroaction_list = macroaction_list
 		self.link_status = []
 		self.links = []
@@ -277,7 +277,6 @@ class AddLink(MacroAction):
 
 		self.gmp = gmp
 		self.fixed = fixed
-		self.objects = objects 
 		self.robot = robot
 		self.teleport = True
 		# Three positional and 1 rotational degree of freedom
@@ -350,40 +349,45 @@ class AddLink(MacroAction):
 			return (None, False)
 
 	@property
+	def total_objects(self):
+		return self.objects+self.fixed
+
+	@property
 	def num_links(self):
-		return len(self.objects)**2
+		return (len(self.total_objects))**2
 	@property
 	def num_params(self):
 		return 0 # Pairwise object groupings
 	@property
 	def num_selectors(self):
-		return len(self.objects)**2 # Pairwise object groupings
+		return (len(self.total_objects))**2 # Pairwise object groupings
 
 
+	
 	def execute(self, embedding, link_status, sim=False):
 		"""
 			Output: (feasible, planning commands, auxiliary output)
 			Note planning commands
 		"""
 		object_pair_index = np.argmax(embedding, axis=0)
-		object1_index = int(float(object_pair_index)/len(self.objects))
-		object2_index = int(float(object_pair_index)%len(self.objects))
+		object1_index = int(float(object_pair_index)/len(self.total_objects))
+		object2_index = int(float(object_pair_index)%len(self.total_objects))
 		# Just check to make sure I have this calculation right
-		assert object1_index*len(self.objects)+object2_index == object_pair_index or object2_index*len(self.objects)+object1_index == object_pair_index
+		assert object1_index*len(self.total_objects)+object2_index == object_pair_index or object2_index*len(self.total_objects)+object1_index == object_pair_index
 		# Not already linked
-		(feas_command, feasible) = self.feasibility_check(self.objects[object1_index], self.objects[object2_index], sim)
+		(feas_command, feasible) = self.feasibility_check(self.total_objects[object1_index], self.total_objects[object2_index], sim)
 		if(feasible == True):
 			if(link_status[object_pair_index] == 1):
 				# Already linked, must unlink
 				# Matrix should by symmetric
-				link_status[object1_index*len(self.objects)+object2_index] = 0
-				link_status[object2_index*len(self.objects)+object1_index] = 0
+				link_status[object1_index*len(self.total_objects)+object2_index] = 0
+				link_status[object2_index*len(self.total_objects)+object1_index] = 0
 				return (True, feas_command, link_status)
 
 			else:
 				# Matrix should by symmetric
-				link_status[object1_index*len(self.objects)+object2_index] = 1
-				link_status[object2_index*len(self.objects)+object1_index] = 1
+				link_status[object1_index*len(self.total_objects)+object2_index] = 1
+				link_status[object2_index*len(self.total_objects)+object1_index] = 1
 				return (True, feas_command, link_status)
 		else:
 			return (False, None, None)

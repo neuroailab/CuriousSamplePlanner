@@ -89,6 +89,7 @@ class RRTPlanner():
 		# Add starting node to the graph
 		self.policy.reset()
 		start_state = torch.tensor(self.environment.get_start_state())
+		print(start_state.shape)
 		start_node = self.graph.add_node(start_state, None, None, None, run_index=0)
 		run_index = 1
 
@@ -96,7 +97,6 @@ class RRTPlanner():
 		nodes_added = 0
 		while (True):
 			print("Run_index: "+str(run_index))
-
 			# Select a random point within the configuration space for the objects
 			sample_config = self.environment.get_random_config()
 
@@ -106,7 +106,8 @@ class RRTPlanner():
 			# Sample a bunch of actions from that node
 			results = []
 			state_action_dict = {}
-			for _ in range(int(self.experiment_dict["batch_size"]/self.experiment_dict["growth_factor"])):
+			# for _ in range(int(self.experiment_dict["batch_size"]/self.experiment_dict["growth_factor"])):
+			for _ in range(1):
 				self.environment.set_state(nearest_node.config)
 				action = self.policy.select_action(sample_config)
 				result = self.policy.step(torch.squeeze(action))
@@ -122,7 +123,11 @@ class RRTPlanner():
 				action = state_action_dict[result[0]]
 				ntarget = torch.squeeze(next_state.detach().cpu()).numpy()
 				naction = torch.squeeze(action.detach().cpu()).numpy()
-				self.graph.add_node(ntarget, ntarget, naction, nearest_node.node_key, run_index = run_index)
+
+				added_node = self.graph.add_node(ntarget, ntarget, naction, nearest_node.node_key, run_index = run_index)
+				if(done):
+					return self.graph, self.graph.get_optimal_plan(start_node, added_node), self.experiment_dict
+
 				nodes_added+=1
 				break
 
@@ -132,8 +137,6 @@ class RRTPlanner():
 				run_index+=1
 
 
-
-		return self.graph, plan, self.experiment_dict
 
 
 

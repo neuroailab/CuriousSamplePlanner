@@ -209,7 +209,8 @@ class PulleySeesaw(Environment):
 
 		print("setting up action sapace")
 		self.macroaction = MacroAction([
-								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed, gmp=self.detailed_gmp),
+								PickPlace(objects = self.objects, robot=self.robot, fixed=self.fixed_objects, gmp=self.detailed_gmp),
+								AddLink(objects = self.objects, robot=self.robot, fixed=self.fixed_objects, gmp=self.detailed_gmp),
 							])
 		self.action_space_size = self.macroaction.action_space_size
 		self.config_size = 6*6+len(self.macroaction.link_status) # (4 for links)
@@ -231,27 +232,16 @@ class PulleySeesaw(Environment):
 			return config[-1] == self.NOKNOT
 		return False
 
-
 	def get_current_config(self):
 		config = []
-		for obj in self.objects:
+		for obj in self.objects+self.fixed_objects:
 			pos, quat = p.getBasePositionAndOrientation(obj)
 			euler = p.getEulerFromQuaternion(quat)
 			config.append(pos)
 			config.append(euler)
-		rpos, rquat = p.getBasePositionAndOrientation(self.red_block)
-		reuler = p.getEulerFromQuaternion(rquat)
-		config.append(rpos)
-		config.append(reuler)
 
-		# joint_state = p.getJointState(self.seesaw, self.seesaw_joint)
-		# if(self.knot is not None):
-		# 	knot_state = self.KNOT
-		# else:
-		# 	knot_state = self.NOKNOT
-
-		# return np.concatenate(small_blocks+[rpos]+[[joint_state[0]]]+[[knot_state]])
-		return np.concatenate(config)
+		resulting_config = np.concatenate(config+[self.macroaction.link_status])
+		return resulting_config
 
 	def get_available_block(self):
 		reachable = False
@@ -336,9 +326,15 @@ class PulleySeesaw(Environment):
 			state.set_position(4, pos5[0], pos5[1], z)
 			self.set_state(state.config)
 			collision = check_pairwise_collisions(self.objects)
+
+		print("State config shape")
+		print(len(state.config))
 		return state.config
 
 
+	@property
+	def fixed_objects(self):
+		return [self.black_block, self.red_block, self.sphereUid]
 
 	@property
 	def fixed(self):

@@ -33,7 +33,7 @@ class EffectPredictionPlanner(CSPPlanner):
 		super(EffectPredictionPlanner, self).__init__(*args)
 		self.worldModel = opt_cuda(DynamicsModel(config_size=self.environment.config_size, action_size = self.environment.action_space_size))
 		self.criterion = nn.MSELoss()
-		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
+		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["wm_learning_rate"])
 
 	def save_params(self):
 		# Save the updated models

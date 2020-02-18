@@ -40,6 +40,7 @@ from CuriousSamplePlanner.rl_ppo_rnd.a2c_ppo_acktr.model import Policy
 from CuriousSamplePlanner.tasks.environment import Environment
 from CuriousSamplePlanner.scripts.utils import *
 from gym import spaces
+from CuriousSamplePlanner.tasks.state import State
 
 
 
@@ -51,8 +52,10 @@ class PulleySeesaw(Environment):
 		return stable, timeout
 
 	def __init__(self, *args):
+
 		super(PulleySeesaw, self).__init__(*args)  
-		# connect(use_gui=not torch.cuda.is_available())
+		self.restore_state = True
+		self.training=False
 		connect(use_gui=True)
 
 		if(self.detailed_gmp):
@@ -69,7 +72,6 @@ class PulleySeesaw(Environment):
 		x_scene_offset = 0.9
 		num_small_blue=5
 
-		self.training=False
 		self.perspectives = [(0, -90)]
 
 		self.pulley = p.loadSDF("models/pulley/newsdf.sdf", globalScaling=2.5)
@@ -89,9 +91,8 @@ class PulleySeesaw(Environment):
 		self.objects = []
 		small_boxes = ["small_blue_heavy", "small_purple_heavy", "small_green_heavy", "small_red_heavy", "small_yellow_heavy"]
 		for i in range(num_small_blue):
-			pos = self.reachable_pos()
 			self.objects.append(p.loadURDF("models/"+str(small_boxes[i])+".urdf", useFixedBase=False))
-			set_pose(self.objects[i], Pose(Point(x = pos[0], y = pos[1], z=0.05)))
+
 
 		self.red_block = p.loadURDF("models/box_red.urdf", useFixedBase=False)
 		set_pose(self.red_block, Pose(Point(x = x_scene_offset+1.7, y = 0, z=0.5)))
@@ -101,6 +102,7 @@ class PulleySeesaw(Environment):
 		self.mass = 1
 		self.basePosition = [x_scene_offset-0.2, -1.7, 1.6]
 		self.baseOrientation = [0, 0, 0, 1]
+
 
 		if(self.training):
 			p.setGravity(0, 0, -10)
@@ -173,28 +175,37 @@ class PulleySeesaw(Environment):
 
 			self.anistropicFriction = [0.00, 0.00, 0.00]
 			p.changeDynamics(self.sphereUid, -1, lateralFriction = 0, anisotropicFriction=self.anistropicFriction)
-			self.keystone = p.loadURDF("models/tiny_green.urdf")
-			set_pose(self.keystone, Pose(Point(x = 0.7, y = 0, z=0.9)))
+
+			if(self.restore_state):
+				self.keystone = p.loadURDF("models/tiny_green.urdf")
+
 			p.setGravity(0, 0, -10)
-			saved_world = p.restoreState(fileName="./temp/pulley_start_state.bullet")
-			# for j in range(100):
-			#     p.stepSimulation(physicsClientId=0)
 
+			if(self.restore_state):
+				saved_world = p.restoreState(fileName="./temp/pulley_start_state.bullet")
+			else:
+				for j in range(100):
+					p.stepSimulation(physicsClientId=0)
+
+			
 			self.knot = p.createConstraint(self.black_block, -1, self.sphereUid, -1,  p.JOINT_FIXED, jointAxis=[0, 0, 0], parentFramePosition=self.block_pos , childFramePosition=self.block_pos)
-			# for j in range(3000):
-			#     print(j)
-			#     p.stepSimulation(physicsClientId=0)
+			if(not self.restore_state):
+				for j in range(3000):
+					print(j)
+					p.stepSimulation(physicsClientId=0)
+
+			if(not self.restore_state):
+				self.keystone = p.loadURDF("models/tiny_green.urdf")
+				set_pose(self.keystone, Pose(Point(x = 0.7, y = 0, z=0.9)))
+				for j in range(1000):
+					print(j)
+					p.stepSimulation(physicsClientId=0)
+
+				saved_world = p.saveState()
+				p.saveBullet("./temp/pulley_start_state.bullet")
+			self.static_objects = [self.red_block, self.black_block, self.sphereUid]
 
 
-			# self.keystone = p.loadURDF("models/tiny_green.urdf")
-			set_pose(self.keystone, Pose(Point(x = 0.7, y = 0, z=0.9)))
-
-			# for j in range(1000):
-			#     print(j)
-			#     p.stepSimulation(physicsClientId=0)
-
-			# saved_world = p.saveState()
-			# p.saveBullet("./pulley_start_state.bullet")
 
 		print("setting up action sapace")
 		self.macroaction = MacroAction([
@@ -205,10 +216,6 @@ class PulleySeesaw(Environment):
 		self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
 		self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
 		self.predict_mask = [0,1,2]+[6,7,8]+[12,13,14]+[18,19,20]
-
-
-
-
 
 	def check_goal_state(self, config):
 		if(self.training):
@@ -312,28 +319,26 @@ class PulleySeesaw(Environment):
 		for i in range(5):
 			set_pose(self.objects[i], Pose(Point(x = conf[i*6], y = conf[i*6+1], z = conf[i*6+2]), Euler(roll=conf[i*6+3], pitch = conf[i*6+4], yaw = conf[i*6+5])))
 		set_pose(self.red_block, Pose(Point(x = conf[-6], y = conf[-5], z = conf[-4]), Euler(roll = conf[-3], pitch = conf[-2], yaw = conf[-1])))
-		# p.resetJointState(self.seesaw, self.seesaw_joint, conf[-2])
-		# if(conf[-1] == self.KNOT):
-		# 	if(self.knot is None):
-		# 		self.knot = self.constrain()
-		# elif(conf[-1] == self.NOKNOT):
-		# 	if(self.knot is not None):
-		# 		self.deconstrain()
-		# 	self.knot = None
+
 
 
 	def get_start_state(self):
-		pos=[]
-		z = 0.05
-		for i in range(5):
-			pos.append([j for j in self.reachable_pos()])
+		collision = True
+		z = stable_z(self.objects[0], self.floor)
+		while(collision):
+			poses = [self.macroaction.reparameterize(self.objects[0], np.random.uniform(low=-1, high=1, size=4)) for _ in range(5)]
+			pos1, pos2, pos3, pos4, pos5 = [pose[0] for pose in poses]
+			state = State(len(self.objects), len(self.static_objects), len(self.macroaction.link_status))
+			state.set_position(0, pos1[0], pos1[1], z)
+			state.set_position(1, pos2[0], pos2[1], z)
+			state.set_position(2, pos3[0], pos3[1], z)
+			state.set_position(3, pos4[0], pos4[1], z)
+			state.set_position(4, pos5[0], pos5[1], z)
+			self.set_state(state.config)
+			collision = check_pairwise_collisions(self.objects)
+		return state.config
 
-		pos.append([2.6277769963206423, -0.038717869031510414, 0.2586803615589658])
 
-		eu = [0,0,0]
-		conf = np.array([pos[0][0], pos[0][1], z]+eu+[pos[1][0], pos[1][1], z]+eu+[pos[2][0], pos[2][1], z]+eu+[pos[3][0], pos[3][1], z]+eu+[pos[4][0], pos[4][1], z]+eu+[pos[5][0], pos[5][1], pos[5][2]]+eu)
-		self.set_state(conf)
-		return conf
 
 	@property
 	def fixed(self):

@@ -36,7 +36,7 @@ class StateEstimationPlanner(CSPPlanner):
 		super(StateEstimationPlanner, self).__init__(*args)
 		self.worldModel = opt_cuda(ConvWorldModel(config_size=self.environment.config_size, num_perspectives=len(self.environment.perspectives)))
 		self.criterion = nn.MSELoss()
-		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
+		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["wm_learning_rate"])
 
 
 	def update_novelty_scores(self):

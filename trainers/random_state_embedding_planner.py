@@ -36,13 +36,12 @@ class RandomStateEmbeddingPlanner(CSPPlanner):
 		self.transform = list(self.environment.predict_mask)
 		random.shuffle(self.transform)
 		self.criterion = nn.MSELoss()
-		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
+		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["wm_learning_rate"])
 
 	def reset_world_model(self):
 		self.worldModel = opt_cuda(WorldModel(config_size=self.environment.config_size))
 		self.criterion = nn.MSELoss()
-		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["learning_rate"])
-
+		self.optimizer_world = optim.Adam(self.worldModel.parameters(), lr=self.experiment_dict["wm_learning_rate"])
 
 	def update_novelty_scores(self):
 		if(len(self.graph)>0 and self.experiment_dict["node_sampling"] == "softmax"):
@@ -69,8 +68,8 @@ class RandomStateEmbeddingPlanner(CSPPlanner):
 				labels = opt_cuda(labels)
 				prestate = opt_cuda(prestates)
 				acts = opt_cuda(acts)
-
 				labels = torch.squeeze(labels)
+				
 				self.optimizer_world.zero_grad()
 				outputs = self.worldModel(labels)
 				targets = labels[:, self.transform]

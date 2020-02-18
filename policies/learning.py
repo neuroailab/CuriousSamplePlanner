@@ -47,7 +47,8 @@ class LearningPolicy(EnvPolicy):
 		action = self.agent.select_action(obs, self.ounoise, self.param_noise)
 		return action
 
-	def store_results(self, next_state, reward, done, infos, parent, action):
+	def store_results(self, *args):
+		next_state, reward, done, infos, parent, action = args
 		mask = opt_cuda(torch.Tensor([not done]))
 		reward = opt_cuda(torch.Tensor([reward]))
 		parent_config = torch.unsqueeze(opt_cuda(torch.Tensor(parent.config).type(torch.FloatTensor)), dim=0)

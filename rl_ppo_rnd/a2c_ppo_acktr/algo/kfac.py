@@ -42,13 +42,11 @@ def compute_cov_a(a, classname, layer_info, fast_cnn):
         a = torch.ones(a.size(0), 1)
         if is_cuda:
             a = a.cuda()
-
     return a.t() @ (a / batch_size)
 
 
 def compute_cov_g(g, classname, layer_info, fast_cnn):
     batch_size = g.size(0)
-
     if classname == 'Conv2d':
         if fast_cnn:
             g = g.view(g.size(0), g.size(1), -1)

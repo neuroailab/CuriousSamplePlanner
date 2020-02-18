@@ -59,9 +59,8 @@ class TwoBlocks(Environment):
 		self.floor = p.loadURDF('models/short_floor.urdf', useFixedBase=True)
 		self.green_block = p.loadURDF("models/box_green.urdf", useFixedBase=False)
 		self.red_block = p.loadURDF("models/box_red.urdf", useFixedBase=False)
-		self.blue_block = p.loadURDF("models/box_blue.urdf", useFixedBase=False)
 
-		self.objects = [self.green_block, self.red_block, self.blue_block]
+		self.objects = [self.green_block, self.red_block]
 		self.static_objects = []
 
 		# Only used for some curiosity types
@@ -94,16 +93,13 @@ class TwoBlocks(Environment):
 
 	def check_goal_state(self, config):
 		# collect the y values
-		vals = [config[2], config[8], config[14]]
+		vals = [config[2], config[8]]
 		vals.sort()
 
 		# Two stack
-		if( (vals[0] > 0.06) or (vals[1] > 0.06) or (vals[2] > 0.06)):
+		if( (vals[0] > 0.06) or (vals[1] > 0.06)):
 			return True
 
-		# Three stack
-		# if(vals[0]<0.06 and (vals[1] < 0.16 and vals[1] > 0.06) and (vals[2] > 0.16)):
-		# 	return True
 		return False
 
 
@@ -111,37 +107,29 @@ class TwoBlocks(Environment):
 		# Get the object states
 		gpos, gquat = p.getBasePositionAndOrientation(self.green_block, physicsClientId=0)
 		rpos, rquat  = p.getBasePositionAndOrientation(self.red_block, physicsClientId=0)
-		ypos, yquat = p.getBasePositionAndOrientation(self.blue_block, physicsClientId=0)
-
 		# Convert quat to euler
 		geuler = p.getEulerFromQuaternion(gquat)
 		reuler = p.getEulerFromQuaternion(rquat)
-		yeuler = p.getEulerFromQuaternion(yquat)
 
 		# Format into a config vector
-		return np.concatenate([gpos, geuler, rpos, reuler, ypos, yeuler]+[self.macroaction.link_status])
+		return np.concatenate([gpos, geuler, rpos, reuler]+[self.macroaction.link_status])
 
 	def get_current_detailed_config(self):
 		# Get the object states
 		gpos, gquat = p.getBasePositionAndOrientation(self.green_block, physicsClientId=0)
 		rpos, rquat  = p.getBasePositionAndOrientation(self.red_block, physicsClientId=0)
-		ypos, yquat = p.getBasePositionAndOrientation(self.blue_block, physicsClientId=0)
 
 		g_linear_vel, g_angular_velocity = p.getBaseVelocity(self.green_block, physicsClientId=0)
 		r_linear_vel, r_angular_velocity = p.getBaseVelocity(self.red_block, physicsClientId=0)
-		y_linear_vel, y_angular_velocity = p.getBaseVelocity(self.red_block, physicsClientId=0)
 
 		# Convert quat to euler
 		geuler = p.getEulerFromQuaternion(gquat)
 		reuler = p.getEulerFromQuaternion(rquat)
-		yeuler = p.getEulerFromQuaternion(yquat)
 
 		# Format into a config vector
-		
 		return {
 			"object_1": np.concatenate([gpos, gquat, geuler, g_linear_vel, g_angular_velocity]),
-			"object_2": np.concatenate([rpos, rquat, reuler, r_linear_vel, r_angular_velocity]),
-			"object_3": np.concatenate([ypos, yquat, yeuler, y_linear_vel, y_angular_velocity])
+			"object_2": np.concatenate([rpos, rquat, reuler, r_linear_vel, r_angular_velocity])
 		}
 
 
@@ -150,12 +138,11 @@ class TwoBlocks(Environment):
 		collision = True
 		z = stable_z(self.green_block, self.floor)
 		while(collision):
-			poses = [self.macroaction.reparameterize(self.objects[0], np.random.uniform(low=-1, high=1, size=4)) for _ in range(3)]
-			pos1, pos2, pos3 = [pose[0] for pose in poses]
+			poses = [self.macroaction.reparameterize(self.objects[0], np.random.uniform(low=-1, high=1, size=4)) for _ in range(2)]
+			pos1, pos2 = [pose[0] for pose in poses]
 			state = State(len(self.objects), len(self.static_objects), len(self.macroaction.link_status))
 			state.set_position(0, pos1[0], pos1[1], z)
 			state.set_position(1, pos2[0], pos2[1], z)
-			state.set_position(2, pos3[0], pos3[1], z)
 			self.set_state(state.config)
 			collision = check_pairwise_collisions(self.objects)
 		return state.config

@@ -62,7 +62,7 @@ class Environment():
         self.spec = Spec(0)
 
         self.observation_space = spaces.Box(low=-1, high=1, shape=( self.config_size,))
-      
+        
         if(not linking):
             self.predict_mask = self.state.positions
         else:
@@ -70,6 +70,25 @@ class Environment():
 
         self.action_space = spaces.Box(low=-1, high=1, shape=(self.action_space_size,))
         self.actor_critic = opt_cuda(Policy([self.config_size], self.action_space, base_kwargs={'recurrent': False}))
+
+
+    def get_random_config(self):
+        sample_config = []
+        for obj in self.objects:
+            random_vector=opt_cuda(torch.tensor(np.random.uniform(low=-1, high=1, size=self.action_space_size))).type(torch.FloatTensor)
+            random_state=self.macroaction.reparameterize(obj, random_vector)
+            pos, quat=random_state
+            euler=p.getEulerFromQuaternion(quat)
+            sample_config+=list(pos)+list(euler)
+        for obj in self.static_objects:
+            pos, quat = p.getBasePositionAndOrientation(obj)
+            euler = p.getEulerFromQuaternion(quat)
+            sample_config+=list(pos)+list(euler)
+        for link in range(len(self.macroaction.link_status)):
+            link_status = random.choice([0, 1])
+            sample_config.append(link_status)
+
+        return sample_config
 
 
     def take_action(self, action):
@@ -150,8 +169,8 @@ class Environment():
             sys.exit(1)
         if(self.check_goal_state(post_stable_state)):
             reward = 1.0
-            done=True
-            self.reset()
+            done = True
+            next_state = self.reset()
             
         if(state_estimation):
             inputs = torch.unsqueeze(torch.cat([torch.tensor(take_picture(yaw, pit, 0)).type(torch.FloatTensor).permute(2, 0, 1) for yaw, pit in self.perspectives]), dim=0)

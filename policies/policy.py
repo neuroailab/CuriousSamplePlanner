@@ -23,5 +23,5 @@ class EnvPolicy:
 	def update(self, total_numsteps):
 		pass
 		
-	def store_results(self, next_state, reward, done, infos, parent, action):
+	def store_results(self, *args):
 		pass

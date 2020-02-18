@@ -11,11 +11,13 @@ import collections
 from CuriousSamplePlanner.planning_pybullet.motion.motion_planners.discrete import astar
 import sys
 
+
 # Planners
 from CuriousSamplePlanner.trainers.state_estimation_planner import StateEstimationPlanner
 from CuriousSamplePlanner.trainers.random_search_planner import RandomSearchPlanner
 from CuriousSamplePlanner.trainers.effect_prediction_planner import EffectPredictionPlanner
 from CuriousSamplePlanner.trainers.RRTPlanner import RRTPlanner
+from CuriousSamplePlanner.trainers.DRLPlanner import DRLPlanner
 
 from CuriousSamplePlanner.trainers.random_state_embedding_planner import RandomStateEmbeddingPlanner
 from CuriousSamplePlanner.scripts.utils import *
@@ -31,20 +33,21 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     # Set up the hyperparameters
     experiment_dict = {
         # Hyps
-        "task": "BookShelf",
-        "policy": "RandomPolicy",
+        "task": "TwoBlocks",
+        "policy": "ACLearningPolicy",
         "policy_path": "/mnt/fs0/arc11_2/policy_data_new/normalize_returns_4_update=1/",
         "return_on_solution": True,
-        "learning_rate": 5e-5,  
+        "learning_rate": 5e-4,  
+        "wm_learning_rate": 5e-5,
         "sample_cap": 1e7, 
         "batch_size": 128,
         'actor_lr': 1e-4,
         'critic_lr': 1e-3,
         "node_sampling": "uniform",
-        "mode": "RRTPlanner",
+        "mode": "DRLPlanner",
         "feasible_training": True,
         "nsamples_per_update": 1024,
-        "training": True,
+        "training": False,
         'exploration_end': 100, 
         "exp_id": exp_id,
         "load_id": load_id,
@@ -62,12 +65,30 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         'hidden_size': 64,
         'use_splitter': True, # Can't use splitter on ppo or a2c because they are on-policy algorithms
         'split': 0.5,
-        'gamma': 0.9,
+        'gamma': 0.5,
         'ou_noise': True,
         'param_noise': False,
         'updates_per_step': 1,
         'replay_size': 100000,
-        # Stats
+        # DRL-Specific
+        'recurrent_policy': False,
+        'algo': 'a2c',
+        'value_loss_coef': 0.5,
+        'reward_alpha': 1,
+        'eps': 1e-5,
+        'entropy_coef': 0,
+        'alpha': 0.99,
+        'max_grad_norm': 0.5,
+        'num_steps': 128,
+        'num_env_steps': 1e7,
+        'use_linear_lr_decay': False,
+        'reset_frequency':1e-3,
+        'terminate_unreachable': False,
+        'use_gae': False,
+        'use_proper_time_limits': False,
+        'log_interval': 1,
+        'clip_param': 0.2, 
+        # stats
         "world_model_losses": [],
         "feasibility":[],
         "rewards": [],

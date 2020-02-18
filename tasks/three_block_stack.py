@@ -97,13 +97,9 @@ class ThreeBlocks(Environment):
 		vals = [config[2], config[8], config[14]]
 		vals.sort()
 
-		# Two stack
-		if( (vals[0] > 0.06) or (vals[1] > 0.06) or (vals[2] > 0.06)):
-			return True
-
 		# Three stack
-		# if(vals[0]<0.06 and (vals[1] < 0.16 and vals[1] > 0.06) and (vals[2] > 0.16)):
-		# 	return True
+		if(vals[0]<0.06 and (vals[1] < 0.16 and vals[1] > 0.06) and (vals[2] > 0.16)):
+			return True
 		return False
 
 

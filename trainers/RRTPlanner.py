@@ -35,6 +35,7 @@ import collections
 from motion_planners.discrete import astar
 import sys
 
+from CuriousSamplePlanner.tasks.two_block_stack import TwoBlocks
 from CuriousSamplePlanner.tasks.three_block_stack import ThreeBlocks
 from CuriousSamplePlanner.tasks.ball_ramp import BallRamp
 from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
@@ -53,7 +54,6 @@ from CuriousSamplePlanner.policies.learning import LearningPolicy
 
 class RRTPlanner():
 	def __init__(self, experiment_dict):
-		print("RRT planning")
 		self.experiment_dict = experiment_dict
 
 		# Create the replay buffer for training world models
@@ -86,26 +86,19 @@ class RRTPlanner():
 		pickle.dump(self.graph, graph_filehandler)
 
 	def plan(self):
-		print("plan")
 		# Add starting node to the graph
 		self.policy.reset()
-		run_index = 0
 		start_state = torch.tensor(self.environment.get_start_state())
-		start_node = self.graph.add_node(start_state, None, None, None, run_index=run_index)
+		start_node = self.graph.add_node(start_state, None, None, None, run_index=0)
+		run_index = 1
 
 		# Begin RRT loop
 		nodes_added = 0
 		while (True):
 			print("Run_index: "+str(run_index))
-			# Select a random point within the configuration space for the objects
-			sample_config = []
 
-			for obj in self.environment.objects:
-				random_vector=opt_cuda(torch.tensor(np.random.uniform(low=-1, high=1, size=self.environment.action_space_size))).type(torch.FloatTensor)
-				random_state=self.environment.macroaction.reparameterize(obj, random_vector)
-				pos, quat=random_state
-				euler=p.getEulerFromQuaternion(quat)
-				sample_config+=list(pos)+list(euler)
+			# Select a random point within the configuration space for the objects
+			sample_config = self.environment.get_random_config()
 
 			# Find the node that is closest to the sample location
 			nearest_node = self.graph.nn(sample_config)

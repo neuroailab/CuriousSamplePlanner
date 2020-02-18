@@ -138,7 +138,6 @@ class BookShelf(Environment):
 
 		# print("getting config: "+str(int(self.current_constraint_id is not None)))
 		returning_state =  np.array(list(b1pos+b1e+b2pos+b2e+bookpos+booke)+self.macroaction.link_status)
-		print("Getting current config: "+str(returning_state.shape))
 		return returning_state
 
 	@property
@@ -157,8 +156,6 @@ class BookShelf(Environment):
 			self.set_state(state.config)
 			collision = check_pairwise_collisions(self.objects)
 
-		print("Returnings start state")
-		print(len(state.config))
 		return state.config 
 		  
 

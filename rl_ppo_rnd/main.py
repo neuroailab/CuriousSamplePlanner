@@ -23,7 +23,6 @@ from CuriousSamplePlanner.tasks.five_block_stack import FiveBlocks
 from CuriousSamplePlanner.tasks.ball_ramp import BallRamp
 from CuriousSamplePlanner.tasks.bookshelf import BookShelf
 from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
-
 from CuriousSamplePlanner.trainers.dataset import ExperienceReplayBuffer
 
 import sys
@@ -224,8 +223,6 @@ def main():
 		value_loss, action_loss, dist_entropy = agent.update(rollouts)
 
 		rollouts.after_update()
-
-
 
 		# Update world model
 		for epoch in range(experiment_dict['wm_epochs']):

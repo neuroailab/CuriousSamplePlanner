@@ -62,6 +62,9 @@ class ACLearningPolicy(EnvPolicy):
 		self.rollouts.insert(*args)
 
 	def update(self, total_numsteps):
+		num_updates = int(
+			self.experiment_dict["num_env_steps"]) // self.experiment_dict["num_steps"]
+
 		self.stepi = 0;
 		with torch.no_grad():
 			next_value = self.actor_critic.get_value(
@@ -74,4 +77,13 @@ class ACLearningPolicy(EnvPolicy):
 		value_loss, action_loss, dist_entropy = self.agent.update(self.rollouts)
 
 		self.rollouts.after_update()
+
+		if self.experiment_dict['use_linear_lr_decay']:
+			# decrease learning rate linearly
+			utils.update_linear_schedule(
+				self.agent.optimizer, total_numsteps//self.experiment_dict["num_steps"], num_updates,
+				self.agent.optimizer.lr if self.experiment_dict["algo"] == "acktr" else self.experiment_dict["learning_rate"])
+			for param_group in self.agent.optimizer.param_groups:
+				print(param_group['lr'])
+
 		return value_loss, action_loss, dist_entropy

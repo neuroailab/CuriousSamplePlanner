@@ -132,6 +132,7 @@ class DRLPlanner():
 					[[1.0]])
 				self.policy.store_results(next_state, recurrent_hidden_states, action,
 								action_log_prob, value, torch.tensor(rew_t), masks, bad_masks)
+				
 			value_loss, action_loss, dist_entropy = self.policy.update(self.experiment_dict['num_sampled_nodes'])
 			value_losses.append(value_loss)
 			action_losses.append(action_loss)

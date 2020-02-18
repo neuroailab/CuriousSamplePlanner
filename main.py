@@ -74,7 +74,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         'recurrent_policy': False,
         'algo': 'ppo',
         'value_loss_coef': 0.5,
-        'reward_alpha': 0.99,
+        'reward_alpha': 0.9,
         'eps': 1e-5,
         'entropy_coef': 0,
         'alpha': 0.99,

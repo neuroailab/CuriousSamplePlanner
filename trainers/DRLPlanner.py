@@ -92,6 +92,12 @@ class DRLPlanner():
 			self.experiment_dict["num_env_steps"]) // self.experiment_dict["num_steps"]
 
 		for j in range(num_updates):
+			if experiment_dict['use_linear_lr_decay']:
+				# decrease learning rate linearly
+				utils.update_linear_schedule(
+					agent.optimizer, j, num_updates,
+					agent.optimizer.lr if experiment_dict["algo"] == "acktr" else experiment_dict["lr"])
+
 			for step in range(self.experiment_dict['num_steps']):
 				self.experiment_dict['num_sampled_nodes']+=1
 				# Sample actions

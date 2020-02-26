@@ -18,6 +18,7 @@ from CuriousSamplePlanner.trainers.random_search_planner import RandomSearchPlan
 from CuriousSamplePlanner.trainers.effect_prediction_planner import EffectPredictionPlanner
 from CuriousSamplePlanner.trainers.RRTPlanner import RRTPlanner
 from CuriousSamplePlanner.trainers.DRLPlanner import DRLPlanner
+from CuriousSamplePlanner.trainers.CSPPlanner import CSPPlanner
 
 from CuriousSamplePlanner.trainers.random_state_embedding_planner import RandomStateEmbeddingPlanner
 from CuriousSamplePlanner.scripts.utils import *
@@ -33,8 +34,8 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
     # Set up the hyperparameters
     experiment_dict = {
         # Hyps
-        "task": "TwoBlocks",
-        "policy": "ACLearningPolicy",
+        "task": "ThreeBlocks",
+        "policy": "RandomPolicy",
         "policy_path": "/mnt/fs0/arc11_2/policy_data_new/normalize_returns_4_update=1/",
         "return_on_solution": True,
         "learning_rate": 5e-5,
@@ -44,7 +45,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         'actor_lr': 1e-4,
         'critic_lr': 1e-3,
         "node_sampling": "uniform",
-        "mode": "DRLPlanner",
+        "mode": "RandomStateEmbeddingPlanner",
         "feasible_training": True,
         "nsamples_per_update": 1024,
         "training": False,
@@ -74,7 +75,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         'recurrent_policy': False,
         'algo': 'ppo',
         'value_loss_coef': 0.5,
-        'reward_alpha': 1,
+        'reward_alpha': 0,
         'eps': 5e-5,
         'entropy_coef': 0,
         'alpha': 0.99,
@@ -82,7 +83,7 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
         'num_steps': 128,
         'num_env_steps': 5e5,
         'use_linear_lr_decay': True,
-        'reset_frequency': 1e-3,
+        'reset_frequency': 1e-4,
         'terminate_unreachable': False,
         'use_gae': False,
         'use_proper_time_limits': False,

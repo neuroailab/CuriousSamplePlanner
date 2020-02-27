@@ -36,21 +36,23 @@ def main(exp_id="no_expid", load_id="no_loadid", max_num = 64):  # control | exe
     # load = "found_pah.pkl"
     load = None
 
-    # Set up the hyperparameters
     experiment_dict = {
         # Hyps
-        "task": "ThreeBlocks",
-        "learning_rate": 1e-3,  
+        "task": "TwoBlocks",
+        "policy": "RandomPolicy",
+        "policy_path": "/mnt/fs0/arc11_2/policy_data_new/normalize_returns_4_update=1/",
+        "return_on_solution": True,
+        "learning_rate": 5e-5,
+        "wm_learning_rate": 5e-5,
         "sample_cap": 1e7, 
         "batch_size": 128,
-        "return_on_solution":True,
         'actor_lr': 1e-4,
         'critic_lr': 1e-3,
         "node_sampling": "uniform",
         "mode": "RandomStateEmbeddingPlanner",
         "feasible_training": True,
         "nsamples_per_update": 1024,
-        "training": True,
+        "training": False,
         'exploration_end': 100, 
         "exp_id": exp_id,
         "load_id": load_id,
@@ -66,14 +68,35 @@ def main(exp_id="no_expid", load_id="no_loadid", max_num = 64):  # control | exe
         'tau': 0.001,
         'reward_size': 100,
         'hidden_size': 64,
-        'use_splitter': False, # Can't use splitter on ppo or a2c because they are on-policy algorithms
-        'split': 0.2,
-        'gamma': 0.9,
+        'use_splitter': True, # Can't use splitter on ppo or a2c because they are on-policy algorithms
+        'split': 0.5,
+        'gamma': 0.5,
         'ou_noise': True,
         'param_noise': False,
         'updates_per_step': 1,
         'replay_size': 100000,
-        # Stats
+        # DRL-Specific
+        'recurrent_policy': False,
+        'algo': 'ppo',
+        'value_loss_coef': 0.5,
+        'reward_alpha': 0,
+        'eps': 5e-5,
+        'entropy_coef': 0,
+        'alpha': 0.99,
+        'max_grad_norm': 0.5,
+        'num_steps': 128,
+        'num_env_steps': 5e5,
+        'use_linear_lr_decay': True,
+        'reset_frequency': 1e-4,
+        'terminate_unreachable': False,
+        'use_gae': False,
+        'use_proper_time_limits': False,
+        'log_interval': 1,
+        'save_interval': 10,
+        'clip_param': 0.2, 
+        'ppo_epoch': 5,
+        'num_mini_batch': 8,
+        # stats
         "world_model_losses": [],
         "feasibility":[],
         "rewards": [],

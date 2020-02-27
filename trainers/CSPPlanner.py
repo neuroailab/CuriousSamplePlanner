@@ -34,6 +34,7 @@ from torch.utils.data import Dataset, DataLoader
 import collections
 from motion_planners.discrete import astar
 import sys
+from CuriousSamplePlanner.tasks.three_block_stack import TwoBlocks
 
 from CuriousSamplePlanner.tasks.three_block_stack import ThreeBlocks
 from CuriousSamplePlanner.tasks.ball_ramp import BallRamp

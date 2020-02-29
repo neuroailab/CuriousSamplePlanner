@@ -42,7 +42,7 @@ class Spec():
 
 class Environment():
     def __init__(self, experiment_dict):
-        self.dt = 0
+        self.dt = 0.01
         self.nsamples_per_update = experiment_dict['nsamples_per_update']
         self.detailed_gmp = experiment_dict['detailed_gmp']
         self.training = experiment_dict['training']
@@ -164,6 +164,7 @@ class Environment():
         time.sleep(0.01)
         post_stable_state = self.get_current_config()
         next_state = torch.unsqueeze(torch.tensor(post_stable_state), 0).type(torch.FloatTensor)
+        goal_state = next_state
         if(terminate_unreachable and any([self.macroaction.object_unreachable(obj) for obj in self.objects])):
             print("Block is out of reach. Planning will never complete.")
             sys.exit(1)
@@ -180,7 +181,7 @@ class Environment():
         # reward = opt_cuda(torch.unsqueeze(torch.tensor(reward), 0).type(torch.FloatTensor))
         # print(reward)
 
-        return next_state, reward, done, {"episode": {"r": reward} , "inputs": inputs, "prestable": torch.unsqueeze(torch.tensor(pre_stable_state), 0), "feasible":feasible, "command":command }
+        return next_state, reward, done, {"episode": {"r": reward} , "inputs": inputs, "prestable": torch.unsqueeze(torch.tensor(pre_stable_state), 0), "feasible":feasible, "command":command, "goal_state":goal_state }
 
     def reset(self):
         start_config = self.get_start_state()

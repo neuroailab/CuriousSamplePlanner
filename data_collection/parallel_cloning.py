@@ -3,10 +3,10 @@ import os
 import shutil
 
 
-max_num = 1
+max_num = 5096
 num_workers = 1
 prefix  = "./data_collection/solution_data/"
-exp_name = "trajs_threeblocks_2"
+exp_name = "trajs_twoblocks_pio2"
 cuda = "-1"
 
 

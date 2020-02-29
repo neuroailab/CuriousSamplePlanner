@@ -34,8 +34,8 @@ from torch.utils.data import Dataset, DataLoader
 import collections
 from motion_planners.discrete import astar
 import sys
-from CuriousSamplePlanner.tasks.three_block_stack import TwoBlocks
 
+from CuriousSamplePlanner.tasks.two_block_stack import TwoBlocks
 from CuriousSamplePlanner.tasks.three_block_stack import ThreeBlocks
 from CuriousSamplePlanner.tasks.ball_ramp import BallRamp
 from CuriousSamplePlanner.tasks.pulley import PulleySeesaw
@@ -112,6 +112,7 @@ class CSPPlanner():
 			parent_state = torch.unsqueeze(opt_cuda(torch.tensor(parent.config)), dim=0)
 			# Select the action depending on the policy
 			action = self.policy.select_action(parent_state)
+			print(action)
 			# Take a step in the environment
 			next_state, reward, done, infos = self.policy.step(torch.squeeze(action))
 			self.experiment_dict["num_sampled_nodes"] += 1
@@ -126,12 +127,10 @@ class CSPPlanner():
 				self.policy.i_episode  += 1
 
 				# Add the goal node to the graph
-				ntarget = torch.squeeze(next_state).cpu().numpy()
-				max_z_pos = max([ntarget[2], ntarget[8], ntarget[14]])
+				ntarget = torch.squeeze(infos['goal_state']).cpu().numpy()
 				npretarget = prestate.cpu().numpy()
 				naction = action.cpu().numpy()
 				goal_node = self.graph.add_node(ntarget, npretarget, naction, parent.node_key, command = command, run_index=run_index)
-				max_z_pos = max([goal_node.config[2], goal_node.config[8], goal_node.config[14]])
 				# Reset the number of graph nodes
 				self.experiment_dict["num_graph_nodes"] = 0
 

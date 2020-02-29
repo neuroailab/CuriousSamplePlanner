@@ -8,12 +8,7 @@ import os
 import shutil
 import pickle
 import collections
-from CuriousSamplePlanner.planning_pybullet.motion.motion_planners.discrete import astar
 import sys
-from CuriousSamplePlanner.planning_pybullet.pybullet_tools.utils import WorldSaver, enable_gravity, connect, dump_world, set_pose, \
-    Pose, Point, Euler, set_default_camera, stable_z, \
-    BLOCK_URDF, load_model, wait_for_user, disconnect, DRAKE_IIWA_URDF, user_input, update_state, disable_real_time,inverse_kinematics,end_effector_from_body,approach_from_grasp, get_joints, get_joint_positions
-
 
 # Planners
 from CuriousSamplePlanner.trainers.state_estimation_planner import StateEstimationPlanner
@@ -43,7 +38,7 @@ def main(exp_id="no_expid", load_id="no_loadid", max_num = 64):  # control | exe
         "policy_path": "/mnt/fs0/arc11_2/policy_data_new/normalize_returns_4_update=1/",
         "return_on_solution": True,
         "learning_rate": 5e-5,
-        "wm_learning_rate": 5e-5,
+        "wm_learning_rate": 7e-4,
         "sample_cap": 1e7, 
         "batch_size": 128,
         'actor_lr': 1e-4,
@@ -144,11 +139,13 @@ def main(exp_id="no_expid", load_id="no_loadid", max_num = 64):  # control | exe
         # Save the graph so we can load it back in later
         if(graph is not None):
             s_states = [np.expand_dims(plan[i].config, axis=0) for i in range(len(plan)-1)]
+            s_goals = [np.expand_dims(plan[i].config, axis=0) for i in [len(plan)-1]]
             s_actions = [plan[i].action for i in range(1, len(plan))]        
             s_rewards = [float(1) for _ in range(1, len(plan))]
             s_len = len(plan)-1
             data = {
                 'states': np.expand_dims(np.concatenate(s_states, axis=0), axis=0),
+                'goals': np.expand_dims(np.concatenate(s_goals, axis=0), axis=0),
                 'actions': np.expand_dims(np.concatenate(s_actions, axis=0), axis=0),
                 'rewards': np.array(s_rewards),
                 'lengths': float(s_len)

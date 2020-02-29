@@ -37,9 +37,7 @@ for file in data_files:
 		total_length+=data['lengths']
 
 		if(total_length>trajectory_length):
-
 			# Now we have gotten enough samples to cut it off
-
 			traj_states.append(np.concatenate(g_states, axis=1)[:, :trajectory_length, :])
 			traj_actions.append(np.concatenate(g_actions, axis=1)[:, :trajectory_length, :])
 			traj_rewards.append(np.expand_dims(np.concatenate(np.array(g_rewards)), axis=0)[:, :trajectory_length])

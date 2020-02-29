@@ -45,7 +45,7 @@ class TwoBlocks(Environment):
 	def __init__(self, *args):
 		super(TwoBlocks, self).__init__(*args)
 
-		connect(use_gui=False)
+		connect(use_gui=True)
 
 		if(self.detailed_gmp):
 			self.robot = p.loadURDF(DRAKE_IIWA_URDF, useFixedBase=True,  globalScaling=1.2) # KUKA_IIWA_URDF | DRAKE_IIWA_URDF

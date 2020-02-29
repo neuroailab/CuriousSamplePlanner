@@ -129,7 +129,6 @@ def main(exp_id="no_expid", load_id="no_loadid"):  # control | execute | step
             shutil.rmtree(experiment_dict['exp_path'])
 
         os.mkdir(experiment_dict['exp_path'])
-        
         graph, plan, experiment_dict = planner.plan()
 
         # Save the graph so we can load it back in later

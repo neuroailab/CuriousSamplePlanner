@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<robot name="bookcase">
+    <link name="bookcase">
+        <visual>
+            <geometry>
+                <mesh filename="bookshelf.obj"/>
+            </geometry>
+            <material name="red">
+              <color rgba="0.8 0.8 0.8 1" />
+            </material>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="new_bookshelf.obj"/>
+            </geometry>
+        </collision>
+    </link>
+</robot>

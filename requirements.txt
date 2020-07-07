@@ -1,0 +1,12 @@
+numpy
+imageio
+matplotlib
+pybullet
+recordclass
+torch
+scipy
+h5py
+gym
+matplotlib
+opencv-python
+baselines

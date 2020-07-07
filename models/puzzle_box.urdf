@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<robot name="globe">
+  <link name ="rb1_marker">
+    <visual>
+      <origin xyz='0 0 0'/>
+      <geometry>
+        <mesh filename="puzzle_board.stl"  />
+      </geometry>
+			<material name="red">
+        <color rgba="0.98046875 0.875 0.69921875 1"/>
+  		</material>
+    </visual>
+    <collision>
+      <origin xyz='0 0 0'/>
+      <geometry>
+        <mesh filename="puzzle_board.stl" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

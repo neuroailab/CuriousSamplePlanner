@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<robot name="globe">
+  <link name ="star1">
+    <visual>
+      <origin xyz='0 0 0'/>
+      <geometry>
+        <mesh filename="yellow_star.obj"  convex="true" scale="1 1 1" />
+      </geometry>
+			<material name="red">
+        <color rgba="1 1 0 1"/>
+  		</material>
+    </visual>
+    <collision>
+      <origin xyz='0 0 0'/>
+      <geometry>
+        <mesh filename="yellow_star.obj"  convex="true" scale="1 1 1" />
+      </geometry>
+    </collision>
+
+
+  </link>
+  <link name ="star2">
+    <visual>
+      <origin xyz='0 0 0' rpy="0 1.256 0"/>
+      <geometry>
+        <mesh filename="yellow_star.obj"  convex="true" scale="1 1 1" />
+      </geometry>
+      <material name="red">
+        <color rgba="1 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz='0 0 0' rpy="0 1.256 0"/>
+      <geometry>
+        <mesh filename="yellow_star.obj"  convex="true" scale="1 1 1" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name ="star3">
+    <visual>
+      <origin xyz='0 0 0' rpy="0 2.512 0"/>
+      <geometry>
+        <mesh filename="yellow_star.obj"  convex="true" scale="1 1 1" />
+      </geometry>
+      <material name="red">
+        <color rgba="1 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz='0 0 0' rpy="0 2.512 0"/>
+      <geometry>
+        <mesh filename="yellow_star.obj"  convex="true" scale="1 1 1" />
+      </geometry>
+    </collision>
+  </link>
+
+
+  <link name ="star4">
+    <visual>
+      <origin xyz='0 0 0' rpy="0 3.76 0"/>
+      <geometry>
+        <mesh filename="yellow_star.obj"  convex="true" scale="1 1 1" />
+      </geometry>
+      <material name="red">
+        <color rgba="1 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz='0 0 0' rpy="0 3.76 0"/>
+      <geometry>
+        <mesh filename="yellow_star.obj"  convex="true" scale="1 1 1" />
+      </geometry>
+    </collision>
+  </link>
+
+
+  <link name ="star5">
+    <visual>
+      <origin xyz='0 0 0' rpy="0 5.02 0"/>
+      <geometry>
+        <mesh filename="yellow_star.obj"  convex="true" scale="1 1 1" />
+      </geometry>
+      <material name="red">
+        <color rgba="1 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz='0 0 0' rpy="0 5.02 0"/>
+      <geometry>
+        <mesh filename="yellow_star.obj"  convex="true" scale="1 1 1" />
+      </geometry>
+    </collision>
+  </link>
+
+
+  <joint name="my_joint1" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="star1"/>
+    <child link="star2"/>
+  </joint>
+
+
+  <joint name="my_joint2" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="star2"/>
+    <child link="star3"/>
+  </joint>
+
+
+  <joint name="my_joint3" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="star3"/>
+    <child link="star4"/>
+  </joint>
+
+
+  <joint name="my_joint4" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="star4"/>
+    <child link="star5"/>
+  </joint>
+</robot>

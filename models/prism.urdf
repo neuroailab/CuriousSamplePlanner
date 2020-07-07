@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot name="prism">
+  <link name="base_link">
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.2" />
+      <inertia ixx="0.00056" ixy="0" ixz="0" iyy="0.00042" iyz="0"
+          izz="0.000813" />
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.20 0.20 0.10" />
+      </geometry>
+      <material name="purple">
+        <color rgba="1.0 0.0 1.0 1.0" />
+      </material>
+    </visual>
+    <visual>
+      <origin xyz="0 0.03 0.045" rpy="-0.39 0 0" />
+      <geometry>
+        <box size="0.20 0.12 0.05" />
+      </geometry>
+      <material name="purple">
+        <color rgba="1.0 0.0 1.0 1.0" />
+      </material>
+    </visual>
+    <visual>
+      <origin xyz="0 -0.055385 0.068" rpy="0 0 0" />
+      <geometry>
+        <box size="0.20 0.08923 0.04615" />
+      </geometry>
+      <material name="purple">
+        <color rgba="1.0 0.0 1.0 1.0" />
+      </material>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.20 0.2 0.10" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.03 0.045" rpy="-0.39 0 0" />
+      <geometry>
+        <box size="0.20 0.12 0.05" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.055385 0.068" rpy="0 0 0" />
+      <geometry>
+        <box size="0.20 0.08923 0.04615" />
+      </geometry>
+    </collision>
+
+  </link>
+
+</robot>

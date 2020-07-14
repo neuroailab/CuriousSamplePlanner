@@ -1,36 +1,3 @@
-<style>
-	.column {
-		float: left;
-		width: 50%;
-		padding: 5px;
-	}
-
-	/* Clear floats after image containers */
-	.row::after {
-		content: "";
-		clear: both;
-		display: table;
-	}
-
-	.tcolumn {
-		float: left;
-		width: 33.33%;
-		padding: 5px;
-	}
-
-	/* Clear floats after image containers */
-	.trow::after {
-		content: "";
-		clear: both;
-		display: table;
-	}
-	.block_title {
-		text-align: center;
-	}
-</style>
-
-
-
 # What is the Curious Sample Planner?
 
 The Curious Sample Planner (CSP) is an algorithm for flexibly and efficiently discovering temporally extended multi-step plans in sparse-reward environments. Complex behaviors such as cleaning a kitchen, organizing a drawer, or cooking a meal require plans that are a combination of low-level geometric manipulation and high-level action sequencing. Below are a few of the tasks that we are looking to find planning solutions to.
@@ -188,3 +155,34 @@ While these were not the goal state, they were reasonable avenues to explore in 
 
 <img src="./figs/bloopers.png" alt="Qual" style="width:100%">
 
+
+<style>
+	.column {
+		float: left;
+		width: 50%;
+		padding: 5px;
+	}
+
+	/* Clear floats after image containers */
+	.row::after {
+		content: "";
+		clear: both;
+		display: table;
+	}
+
+	.tcolumn {
+		float: left;
+		width: 33.33%;
+		padding: 5px;
+	}
+
+	/* Clear floats after image containers */
+	.trow::after {
+		content: "";
+		clear: both;
+		display: table;
+	}
+	.block_title {
+		text-align: center;
+	}
+</style>

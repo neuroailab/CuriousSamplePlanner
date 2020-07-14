@@ -153,7 +153,7 @@ CSP is comprised of four main modules. The action selection networks include an 
 The action selection networks have two primary functions: maximizing curiosity in action selection and avoiding infeasible macro-actions. The networks are trained using actor-critic reinforcement learning. The networks select feasible actions that maximize the novelty signal, leading to actions that result in novel configurations or dynamics. The actor-network outputs a continuous (real-valued) vector which is translated into a macro-action with both discrete and continuous parameters. The forward dynamics module takes a state and an action primitive simulates forward a fixed time and returns the resulting state. This forward dynamics module is used by a geometric planning module to convert macro-actions into feasible sequences of motor primitives. 
 Finally, the curiosity module is a neural network that takes states as inputs and returns a curiosity score, with learnable parameters.
 
-# Why do we need CSP?
+# Quantitative Results
 
 We compared the performance of CSP to several reinforcement learning and planning baselines using a single metric: the number of steps taken in the environment.
 

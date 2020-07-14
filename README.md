@@ -23,26 +23,6 @@ The Curious Sample Planner (CSP) is an algorithm for flexibly and efficiently di
 	</div>
 </div>
 
-Currently, there are three approaches to problems of this sort: geometric motion planning, task and motion planning, and reinforcement learning. Unfortunately, these methods have problems that make them unusable for complex physical tasks that we were looking to solve with a flexible, multi-purpose algorithm.
-
-### Reinforcement Learning Restrictions
-
-Our first attempt might be trying to use reinforcement learning on action primitives such as joint torques where a reward of 1 is given for having stacked the blocks or built the ramp and 0 otherwise. Unfortunately, the randomly initialized reinforcement learning policy would lead the arm to randomly explore its configuration space and likely never even pick up a single block. 
-
-### Geometric Motion Planning Restrictions
-
-Now let's say we were to try geometric motion planning, which effectively explores the entire configuration space of primitives. The configuration space, in this case, includes dimensions for the rotation and position of each of the objects in addition to the robotic joint configurations. Such a large dimensional continuous configuration space is impossible to search exhaustively. 
-
-### Task and Motion Planning Restrictions
-
-Finally, let's say we wanted to use task and motion planning for such a problem. While task and motion planning solves problems similar to this in constrained geometric settings, how would you configure the logical predicates necessary for describing the effect of dropping a plank on a tower of blocks or rolling a ball down a ramp? 
-
-<img src="./figs/problems.png" alt="Problems" style="width:100%">
-	
-To avoid these problems, we combine the strengths of deep reinforcement learning and task and motion planning to create an algorithm that can flexibly and efficiently find solutions to long-range planning problems through curious exploration. 
-
-First, we will take a look at some of the types of problems we are trying to solve.
-
 
 # Long-Range Planning Tasks
 
@@ -78,6 +58,39 @@ In this task, the environment contains a rope-and-pulley with one end of the rop
 
 <img src="./figs/t4.png" alt="Problem3" style="width:100%">
 
+# Existing approaches
+
+Currently, there are three approaches to problems of this sort: geometric motion planning, task and motion planning, and reinforcement learning. Unfortunately, these methods have problems that make them unusable for complex physical tasks that we were looking to solve with a flexible, multi-purpose algorithm.
+
+### Reinforcement Learning Restrictions
+
+Our first attempt might be trying to use reinforcement learning on action primitives such as joint torques where a reward of 1 is given for having stacked the blocks or built the ramp and 0 otherwise. Unfortunately, the randomly initialized reinforcement learning policy would lead the arm to randomly explore its configuration space and likely never even pick up a single block. 
+
+### Geometric Motion Planning Restrictions
+
+Now let's say we were to try geometric motion planning, which effectively explores the entire configuration space of primitives. The configuration space, in this case, includes dimensions for the rotation and position of each of the objects in addition to the robotic joint configurations. Such a large dimensional continuous configuration space is impossible to search exhaustively. 
+
+### Task and Motion Planning Restrictions
+
+Finally, let's say we wanted to use task and motion planning for such a problem. While task and motion planning solves problems similar to this in constrained geometric settings, how would you configure the logical predicates necessary for describing the effect of dropping a plank on a tower of blocks or rolling a ball down a ramp? 
+
+<img src="./figs/problems.png" alt="Problems" style="width:100%">
+	
+To avoid these problems, we combine the strengths of deep reinforcement learning and task and motion planning to create an algorithm that can flexibly and efficiently find solutions to long-range planning problems through curious exploration. 
+
+First, we will take a look at some of the types of problems we are trying to solve.
+
+# How does CSP Work?
+
+
+<img src="./figs/arch.gif" alt="CSP Architecture" style="width:100%">
+
+
+At its core, CSP is an algorithm for efficiently building a search tree over the state space using parameterized macro-actions.
+CSP is comprised of four main modules. The action selection networks include an actor-network and a critic-network, which learn to select macro-actions and choose parameters of that macro-action given a particular state. 
+The action selection networks have two primary functions: maximizing curiosity in action selection and avoiding infeasible macro-actions. The networks are trained using actor-critic reinforcement learning. The networks select feasible actions that maximize the novelty signal, leading to actions that result in novel configurations or dynamics. The actor-network outputs a continuous (real-valued) vector which is translated into a macro-action with both discrete and continuous parameters. The forward dynamics module takes a state and an action primitive simulates forward a fixed time and returns the resulting state. This forward dynamics module is used by a geometric planning module to convert macro-actions into feasible sequences of motor primitives. 
+Finally, the curiosity module is a neural network that takes states as inputs and returns a curiosity score, with learnable parameters.
+
 
 # What can CSP do?
 
@@ -106,27 +119,11 @@ These examples show how CSP is not biased in the direction of any one solution b
 	</div>
 </div>
 
-
-
-
-# How does CSP Work?
-
-
-<img src="./figs/arch.gif" alt="CSP Architecture" style="width:100%">
-
-
-At its core, CSP is an algorithm for efficiently building a search tree over the state space using parameterized macro-actions.
-CSP is comprised of four main modules. The action selection networks include an actor-network and a critic-network, which learn to select macro-actions and choose parameters of that macro-action given a particular state. 
-The action selection networks have two primary functions: maximizing curiosity in action selection and avoiding infeasible macro-actions. The networks are trained using actor-critic reinforcement learning. The networks select feasible actions that maximize the novelty signal, leading to actions that result in novel configurations or dynamics. The actor-network outputs a continuous (real-valued) vector which is translated into a macro-action with both discrete and continuous parameters. The forward dynamics module takes a state and an action primitive simulates forward a fixed time and returns the resulting state. This forward dynamics module is used by a geometric planning module to convert macro-actions into feasible sequences of motor primitives. 
-Finally, the curiosity module is a neural network that takes states as inputs and returns a curiosity score, with learnable parameters.
-
 # Quantitative Results
 
 We compared the performance of CSP to several reinforcement learning and planning baselines using a single metric: the number of steps taken in the environment.
 
 * It is also important to note that it is impossible to compare our algorithm to TAMP because of the manual prespecification of action effects necessary for TAMP to function.
-
-
 
 <img src="./figs/quantitative.png" alt="Quant" style="width:100%">
 

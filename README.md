@@ -56,15 +56,25 @@ The Curious Sample Planner (CSP) is an algorithm for flexibly and efficiently di
 	</div>
 </div>
 
-Currently, there are two approaches to problems of this sort: planning and reinforcement learning. Unfortunately, these methods have problems that make them unusable for complex physical tasks that we were looking to solve with a flexible, multi-purpose algorithm.
+Currently, there are three approaches to problems of this sort: geometric motion planning, task and motion planning, and reinforcement learning. Unfortunately, these methods have problems that make them unusable for complex physical tasks that we were looking to solve with a flexible, multi-purpose algorithm.
 
+### Reinforcement Learning Restrictions
+
+Our first attempt might be trying to use reinforcement learning on action primitives such as joint torques where a reward of 1 is given for having stacked the blocks or built the ramp and 0 otherwise. Unfortunately, the randomly initialized reinforcement learning policy would lead the arm to randomly explore its configuration space and likely never even pick up a single block. 
+
+### Geometric Motion Planning Restrictions
+
+Now let's say we were to try geometric motion planning, which effectively explores the entire configuration space of primitives. The configuration space, in this case, includes dimensions for the rotation and position of each of the objects in addition to the robotic joint configurations. Such a large dimensional continuous configuration space is impossible to search exhaustively. 
+
+### Task and Motion Planning Restrictions
+
+Finally, let's say we wanted to use task and motion planning for such a problem. While task and motion planning solves problems similar to this in constrained geometric settings, how would you configure the logical predicates necessary for describing the effect of dropping a plank on a tower of blocks or rolling a ball down a ramp? 
 
 <img src="./figs/problems.png" alt="Problems" style="width:100%">
 	
 To avoid these problems, we combine the strengths of deep reinforcement learning and task and motion planning to create an algorithm that can flexibly and efficiently find solutions to long-range planning problems through curious exploration. 
 
 First, we will take a look at some of the types of problems we are trying to solve.
-
 
 
 # Long-Range Planning Tasks

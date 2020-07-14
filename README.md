@@ -188,8 +188,3 @@ While these were not the goal state, they were reasonable avenues to explore in 
 
 <img src="./figs/bloopers.png" alt="Qual" style="width:100%">
 
-
-# Learn more
-
-You can find the code for this algorithm [here](https://github.com/neuroailab/CuriousSamplePlanner) and the paper can be viewed on [arXiv](https://arxiv.org/abs/2004.10876)
-

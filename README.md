@@ -24,13 +24,37 @@
 		clear: both;
 		display: table;
 	}
+	.block_title {
+		text-align: center;
+	}
 </style>
 
 
 
-# What is the Curious Sample planner?
+# What is the Curious Sample Planner?
 
-Many complex behaviors such as cleaning a kitchen, organizing a drawer, or cooking a meal require plans that are a combination of low-level geometric manipulation and high-level action sequencing.
+The Curious Sample Planner (CSP) is an algorithm for flexibly and efficiently discovering temporally extended multi-step plans in sparse-reward environments. Complex behaviors such as cleaning a kitchen, organizing a drawer, or cooking a meal require plans that are a combination of low-level geometric manipulation and high-level action sequencing. Below are a few of the tasks that we are looking to find planning solutions to.
+
+<div class="row">
+	<div class="column">
+		<h3 class = "block_title">Block-Stacking</h3>
+		<img src="./figs/an_5stack.gif" alt="Five-Stack" style="width:100%">
+	</div>
+	<div class="column">
+		<h3 class = "block_title">Ramp-Building</h3>
+		<img src="./figs/an_ramp3.gif" alt="Ramp" style="width:100%">
+	</div>
+</div>
+<div class="row">
+	<div class="column">
+		<h3 class = "block_title">Tool-Construction</h3>
+		<img src="./figs/an_bookshelf.gif" alt="Bookshelf" style="width:100%">
+	</div>
+	<div class="column">
+		<h3 class = "block_title">Pulley-Seesaw</h3>
+		<img src="./figs/an_pulley.gif" alt="Pulley" style="width:100%">
+	</div>
+</div>
 
 Currently, there are two approaches to problems of this sort: planning and reinforcement learning. Unfortunately, these methods have problems that make them unusable for complex physical tasks that we were looking to solve with a flexible, multi-purpose algorithm.
 
@@ -41,26 +65,7 @@ To avoid these problems, we combine the strengths of deep reinforcement learning
 
 First, we will take a look at some of the types of problems we are trying to solve.
 
-<div class="row">
-	<div class="column">
-		<h3>Block-Stacking</h3>
-		<img src="./figs/an_5stack.gif" alt="Five-Stack" style="width:100%">
-	</div>
-	<div class="column">
-		<h3>Ramp-Building</h3>
-		<img src="./figs/an_ramp3.gif" alt="Ramp" style="width:100%">
-	</div>
-</div>
-<div class="row">
-	<div class="column">
-		<h3>Tool-Construction</h3>
-		<img src="./figs/an_bookshelf.gif" alt="Bookshelf" style="width:100%">
-	</div>
-	<div class="column">
-		<h3>Pulley-Seesaw</h3>
-		<img src="./figs/an_pulley.gif" alt="Pulley" style="width:100%">
-	</div>
-</div>
+
 
 # Long-Range Planning Tasks
 

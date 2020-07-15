@@ -25,13 +25,11 @@ The Curious Sample Planner (CSP) is an algorithm for flexibly and efficiently di
 
 
 The agent is only given a reward after having completed the **entire** task. In any one of these tasks, if the agent randomly explored it's configuration space (as is the case in initial RL policies), it would be highly improbable that it would ever pick up a single block, and would therefore receieve no reward as a reinforcement signal. 
-<div class="row">
-	<div class="column">
-			<h3 class = "block_title">Random Exploration</h3>
-			<img src="./figs/wobble.gif" alt="Wobble" style="width:100%">
-	</div>
-</div>
 
+<div class="row">
+	<h3 class = "block_title">Random Exploration</h3>
+	<img src="./figs/wobble.gif" alt="Wobble" style="width:100%">
+</div>
 
 Even if it was able to pick up a single block and place it on another object, it would need to repeat that several more times without knocking over the tower in order to recieve a single reward. A solution to this type of problem needs to somehow self-discover a very specific chain of low-probability actions in order to reach the goal with no reinforcement signal or distance-to-goal metric.
 

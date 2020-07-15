@@ -172,10 +172,9 @@ While these were not the goal state, they were reasonable avenues to explore in 
 		padding: 5px;
 	}
 	.half-center-col {
-		float: center;
+		margin: auto;
 		width: 50%;
 		padding: 5px;
-		text-align: center;
 	}
 	/* Clear floats after image containers */
 	.row::after {

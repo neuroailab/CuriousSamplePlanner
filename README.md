@@ -24,6 +24,15 @@ The Curious Sample Planner (CSP) is an algorithm for flexibly and efficiently di
 </div>
 
 
+The agent is only given a reward after having completed the **entire** task. In any one of these tasks, if the agent randomly explored it's configuration space (as is the case in initial RL policies), it would be highly improbable that it would ever pick up a single block, and would therefore receieve no reward as a reinforcement signal. 
+
+<div class="column">
+		<h3 class = "block_title">Random Exploration</h3>
+		<img src="./figs/wobble.gif" alt="Wobble" style="width:100%">
+</div>
+
+Even if it was able to pick up a single block and place it on another object, it would need to repeat that several more times without knocking over the tower in order to recieve a single reward. A solution to this type of problem needs to somehow self-discover a very specific chain of low-probability actions in order to reach the goal with no reinforcement signal or distance-to-goal metric.
+
 # Long-Range Planning Tasks
 
 We aimed to create tasks that require temporally extended planning as well as low-level geometric manipulation. We constructed a suite of tasks with that objective in mind, and implemented those tasks using a modification of the [Pybullet-planning Library](https://github.com/caelan/ss-pybullet)
@@ -82,12 +91,12 @@ First, we will take a look at some of the types of problems we are trying to sol
 
 # How does CSP Work?
 
+At its core, CSP is an algorithm for efficiently building a search tree over the state space using parameterized macro-actions which prioritizes exploration of novel states.
 
 <img src="./figs/arch.gif" alt="CSP Architecture" style="width:100%">
 
+CSP is comprised of four main modules. The action selection networks include an actor-network and a critic-network, which learn to select macro-actions and choose parameters of that macro-action given a particular state.
 
-At its core, CSP is an algorithm for efficiently building a search tree over the state space using parameterized macro-actions.
-CSP is comprised of four main modules. The action selection networks include an actor-network and a critic-network, which learn to select macro-actions and choose parameters of that macro-action given a particular state. 
 The action selection networks have two primary functions: maximizing curiosity in action selection and avoiding infeasible macro-actions. The networks are trained using actor-critic reinforcement learning. The networks select feasible actions that maximize the novelty signal, leading to actions that result in novel configurations or dynamics. The actor-network outputs a continuous (real-valued) vector which is translated into a macro-action with both discrete and continuous parameters. The forward dynamics module takes a state and an action primitive simulates forward a fixed time and returns the resulting state. This forward dynamics module is used by a geometric planning module to convert macro-actions into feasible sequences of motor primitives. 
 Finally, the curiosity module is a neural network that takes states as inputs and returns a curiosity score, with learnable parameters.
 

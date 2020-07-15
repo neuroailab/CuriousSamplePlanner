@@ -84,7 +84,9 @@ Now let's say we were to try geometric motion planning, which effectively explor
 
 ### Task and Motion Planning Restrictions
 
-Finally, let's say we wanted to use task and motion planning for such a problem. Task and motion planning circumvents the problem of exhaustively searching the entire configuration space by equipping the planner with domain-specific macro-actions such as pick-place, move, ect. These macro-actions are implemented with geometric motion planning, but sequenced using logical planning. While this enables fairly complex multi-step planning, it requires very specific logical descriptions of the effects and preconditions of actions. This limits flexibility and applicability to scenarios where the effects of a macro-action is easily described with logical predicates. While task and motion planning solves problems similar to this in constrained geometric settings, how would you configure the logical predicates necessary for describing the effect of dropping a plank on a tower of blocks or rolling a ball down a ramp? 
+Finally, let's say we wanted to use task and motion planning for such a problem. Task and motion planning circumvents the problem of exhaustively searching the entire configuration space by equipping the planner with domain-specific macro-actions such as pick-place, move, ect. These macro-actions are implemented with geometric motion planning, but sequenced using logical planning. While this enables fairly complex multi-step planning, it requires very specific logical descriptions of the effects and preconditions of actions. This limits flexibility and applicability to scenarios where the effects of a macro-action is easily described with logical predicates. 
+
+So, while task and motion planning solves problems similar to this in constrained geometric settings, how would you configure the logical predicates necessary for describing the effect of dropping a plank on a tower of blocks or rolling a ball down a ramp? 
 
 <img src="./figs/problems.png" alt="Problems" style="width:100%">
 	

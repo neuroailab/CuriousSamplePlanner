@@ -76,15 +76,15 @@ Currently, there are three approaches to problems of this sort: geometric motion
 
 ### Reinforcement Learning Restrictions
 
-Our first attempt might be trying to use reinforcement learning on action primitives such as joint torques where a reward of 1 is given for having stacked the blocks or built the ramp and 0 otherwise. Unfortunately, the randomly initialized reinforcement learning policy would lead the arm to randomly explore its configuration space and likely never even pick up a single block. 
+Our first attempt might be trying to use reinforcement learning on action primitives such as joint torques where a reward of 1 is given for having stacked the blocks or built the ramp and 0 otherwise. Reinforcement learning works by incentivizing actions which lead to rewards. Unfortunately, the randomly initialized reinforcement learning policy would lead the arm to randomly explore its configuration space and likely never even pick up a single block. Because there is no reward ever achieved, there is no reinforcement signal.
 
 ### Geometric Motion Planning Restrictions
 
-Now let's say we were to try geometric motion planning, which effectively explores the entire configuration space of primitives. The configuration space, in this case, includes dimensions for the rotation and position of each of the objects in addition to the robotic joint configurations. Such a large dimensional continuous configuration space is impossible to search exhaustively. 
+Now let's say we were to try geometric motion planning, which effectively explores the entire configuration space by building a tree/graph from the start node using primitive actions. The configuration space, in this case, includes dimensions for the rotation and position of each of the objects in addition to the robotic joint configurations. Such a large dimensional continuous configuration space is impossible to search exhaustively. 
 
 ### Task and Motion Planning Restrictions
 
-Finally, let's say we wanted to use task and motion planning for such a problem. While task and motion planning solves problems similar to this in constrained geometric settings, how would you configure the logical predicates necessary for describing the effect of dropping a plank on a tower of blocks or rolling a ball down a ramp? 
+Finally, let's say we wanted to use task and motion planning for such a problem. Task and motion planning circumvents the problem of exhaustively searching the entire configuration space by equipping the planner with domain-specific macro-actions such as pick-place, move, ect. These macro-actions are implemented with geometric motion planning, but sequenced using logical planning. While this enables fairly complex multi-step planning, it requires very specific logical descriptions of the effects and preconditions of actions. This limits flexibility and applicability to scenarios where the effects of a macro-action is easily described with logical predicates. While task and motion planning solves problems similar to this in constrained geometric settings, how would you configure the logical predicates necessary for describing the effect of dropping a plank on a tower of blocks or rolling a ball down a ramp? 
 
 <img src="./figs/problems.png" alt="Problems" style="width:100%">
 	
@@ -131,7 +131,7 @@ These examples show how CSP is not biased in the direction of any one solution b
 	</div>
 </div>
 
-# Quantitative Results
+## Quantitative Results
 
 We compared the performance of CSP to several reinforcement learning and planning baselines using a single metric: the number of steps taken in the environment.
 
